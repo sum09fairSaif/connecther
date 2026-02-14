@@ -9,12 +9,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* LANDING */}
         <Route path="/" element={<Landing />} />
-
-        {/* AUTH FLOW */}
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
+        <Route path="/symptom-checker" element={<Landing />} />
+        <Route path="/find-a-provider" element={<Landing />} />
+        <Route path="/your-profile" element={<Landing />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
