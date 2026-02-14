@@ -46,13 +46,7 @@ function App() {
             }
           />
 
-<<<<<<< HEAD
           <Route path="*" element={<Navigate to="/" replace />} />
-=======
-          {/* PUBLIC FEATURES */}
-          <Route path="/symptom-checker" element={<Landing />} />
-          <Route path="/find-a-provider" element={<FindDoctorPage />} />
->>>>>>> 4ad49f70a999c1980da004e041c7132cc46ccbba
         </Routes>
       </AuthProvider>
     </BrowserRouter>
