@@ -84,7 +84,10 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: url(./Components/Assets/background-login-form.png) no-repeat fixed;
+  width: 100%;
+  background: url(./Components/Assets/background-login-register-forms.png)
+    no-repeat center center fixed;
+  background-size: cover;
   min-height: 100vh;
 }
 
