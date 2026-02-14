@@ -48,6 +48,10 @@ function Landing() {
       </section>
 
       <section className="spacer" aria-hidden="true" />
+
+      <div className="footer-container">
+        <ul className=""
+      </div>
     </div>
   );
 }
