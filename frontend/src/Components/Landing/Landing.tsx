@@ -1,16 +1,50 @@
 import "./Landing.css";
-import brandLogo from "../Assets/connecther-logo.svg";
+import { useEffect, useState } from "react";
+import mainLogo from "../Assets/connecther-logo.png";
+import textLogo from "../Assets/text-logo.png";
 import heroImage from "../Assets/doctor-consultation.png";
 
 function Landing() {
+  const [userName, setUserName] = useState("Guest");
+
+  useEffect(() => {
+    // Simulate fetching user data
+    const fetchUserData = async () => {
+      try {
+        // Replace with actual API call
+        const user = { name: "Guest" };
+        setUserName(user.name);
+        document.title = `ConnectHER - Welcome, ${user.name}`;
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      }
+    };
+
+    fetchUserData();
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      document.documentElement.style.setProperty(
+        "--parallax-y",
+        `${y * 0.35}px`,
+      );
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="landing-root">
       <div className="parallax-bg" aria-hidden="true" />
 
       <header>
         <h1 className="logo">
-          <img src={brandLogo} alt="ConnectHER logo" className="logo-img" />
+          <img src={mainLogo} alt="" className="logo-img logo-main" />
+          <img src={textLogo} alt="ConnectHER" className="logo-img logo-text" />
         </h1>
+        <p>Welcome, {userName}!</p>
         <div className="container">
           <nav>
             <ul className="nav-links">

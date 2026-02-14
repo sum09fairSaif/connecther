@@ -99,6 +99,7 @@ header {
   padding: 0 4vw 10px;
   display: inline-flex;
   align-items: center;
+  gap: 6px;
 }
 
 .logo-img {
@@ -106,6 +107,17 @@ header {
   width: auto;
   display: block;
   max-width: min(220px, 52vw);
+}
+
+.logo-main {
+  height: 64px;
+  max-width: min(260px, 58vw);
+}
+
+.logo-text {
+  height: 40px;
+  max-height: 52px;
+  margin-top: -6px;
 }
 
 header .container {
