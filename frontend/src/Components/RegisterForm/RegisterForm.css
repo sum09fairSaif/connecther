@@ -1,152 +1,97 @@
-.auth-container {
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap");
+
+.register-page {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 20px;
+
+  font-family: "Poppins", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  background: url("/src/Components/Assets/background-login-form.png") no-repeat
+    center center fixed;
+  background-size: cover;
 }
 
-.auth-card {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  padding: 40px;
+.wrapper {
+  width: 420px;
+  background: transparent;
+  color: #5c4a72;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(30px);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 30px 40px;
+}
+
+.wrapper h1 {
+  font-size: 36px;
+  text-align: center;
+}
+
+.wrapper .input-box {
+  position: relative;
   width: 100%;
-  max-width: 450px;
-  animation: slideUp 0.3s ease-out;
+  height: 50px;
+  margin: 30px 0;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.auth-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.auth-logo {
-  font-size: 28px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 10px;
-}
-
-.auth-header h2 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 8px;
-}
-
-.auth-header p {
-  color: #718096;
-  font-size: 14px;
-}
-
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.error-message {
-  background-color: #fed7d7;
-  color: #c53030;
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  border-left: 4px solid #c53030;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: #2d3748;
-  font-size: 14px;
-}
-
-.form-group input {
-  padding: 12px 16px;
-  border: 2px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 15px;
-  transition: all 0.2s;
-  outline: none;
-}
-
-.form-group input:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.form-group input:disabled {
-  background-color: #f7fafc;
-  cursor: not-allowed;
-}
-
-.auth-button {
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+.input-box input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
   border: none;
-  border-radius: 8px;
+  outline: none;
+  border: 2px solid rgba(92, 74, 114, 0.05);
+
+  border-radius: 40px;
   font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+  color: #5c4a72;
+  padding: 20px 45px 20px 20px;
+}
+
+.input-box ::placeholder {
+  color: rgba(11, 10, 10, 0.5);
+}
+
+.input-box .icon {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+}
+
+.wrapper button {
   margin-top: 10px;
+  width: 100%;
+  height: 45px;
+  border: none;
+  outline: none;
+  background: white;
+  color: #5c4a72;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 40px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.auth-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.auth-button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.auth-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.auth-footer {
-  margin-top: 24px;
+.wrapper .login-link {
+  font-size: 14.5px;
   text-align: center;
+  margin: 20px 0 15px;
 }
 
-.auth-footer p {
-  color: #718096;
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.auth-footer a {
-  color: #667eea;
+.login-link p a {
+  color: slateblue;
   text-decoration: none;
-  font-weight: 500;
-  transition: color 0.2s;
+  font-weight: 600;
 }
 
-.auth-footer a:hover {
-  color: #764ba2;
+.login-link p a:hover {
   text-decoration: underline;
 }

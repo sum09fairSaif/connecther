@@ -1,42 +1,27 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Landing from "./Components/Landing/Landing";
 import LoginForm from "./Components/LoginForm/LoginForm";
 import RegisterForm from "./Components/RegisterForm/RegisterForm";
-<<<<<<< HEAD
 import FindDoctorPage from "./Components/FindDoctor/FindDoctor";
-=======
 import Dashboard from "./Components/Dashboard/Dashboard";
 import Onboarding from "./Components/Onboarding/Onboarding";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
->>>>>>> 1be9c2b5378db24cf07d349d94f653f372c62fbd
 
 function App() {
   return (
     <BrowserRouter>
-<<<<<<< HEAD
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/register" element={<RegisterForm />} />
-        <Route path="/symptom-checker" element={<Landing />} />
-        <Route path="/find-a-provider" element={<FindDoctorPage />} />
-        <Route path="/your-profile" element={<Landing />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-=======
       <AuthProvider>
         <Routes>
-          {/* LANDING */}
           <Route path="/" element={<Landing />} />
-
-          {/* AUTH FLOW */}
           <Route path="/login" element={<LoginForm />} />
           <Route path="/register" element={<RegisterForm />} />
 
-          {/* ONBOARDING - requires auth but not onboarding completion */}
+          <Route path="/symptom-checker" element={<Landing />} />
+          <Route path="/find-a-provider" element={<FindDoctorPage />} />
+
           <Route
             path="/onboarding"
             element={
@@ -46,7 +31,6 @@ function App() {
             }
           />
 
-          {/* PROTECTED ROUTES - require both auth and onboarding */}
           <Route
             path="/your-profile"
             element={
@@ -55,9 +39,10 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
->>>>>>> 1be9c2b5378db24cf07d349d94f653f372c62fbd
     </BrowserRouter>
   );
 }
