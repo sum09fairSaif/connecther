@@ -1,6 +1,7 @@
 import "./Landing.css";
 import { useEffect } from "react";
-import logo from "../Assets/connecther-logo.svg";
+import brandLogo from "../Assets/connecther-logo.svg";
+import heroImage from "../Assets/doctor-consultation.png";
 
 function Landing() {
   useEffect(() => {
@@ -24,7 +25,9 @@ function Landing() {
       <div className="parallax-bg" aria-hidden="true" />
 
       <header>
-        <h1 className="logo">ConnectHER</h1>
+        <h1 className="logo">
+          <img src={brandLogo} alt="ConnectHER logo" className="logo-img" />
+        </h1>
         <div className="container">
           <nav>
             <ul className="nav-links">
@@ -44,9 +47,26 @@ function Landing() {
 
       <section id="hero">
         <div className="container">
-          <div className="hero-content">
-            <h2>Accessible Women's Healthcare, Anytime</h2>
-            <h3>Understand your symptoms. Find the right care.</h3>
+          <div className="hero-layout">
+            <div className="hero-content">
+              <h2>Accessible Women's Healthcare, Anytime</h2>
+              <h3>Understand your symptoms. Find the right care.</h3>
+              <div className="hero-actions">
+                <a href="/symptom-checker" className="service-button">
+                  Symptom Checker
+                </a>
+                <a href="/find-a-provider" className="service-button">
+                  Find a Provider
+                </a>
+              </div>
+            </div>
+            <div className="hero-visual">
+              <img
+                src={heroImage}
+                alt="Doctor consultation illustration"
+                className="hero-image"
+              />
+            </div>
           </div>
         </div>
       </section>
