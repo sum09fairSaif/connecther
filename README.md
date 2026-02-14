@@ -24,6 +24,7 @@ By meeting women where they are physically and mentally, we empower them to stay
 **Backend:** Node.js + Express + TypeScript  
 **Database:** PostgreSQL (via Supabase)  
 **Auth:** Supabase Authentication  
+**Auth0:** User Authentication for User Login/Account Creation   
 **AI:** Gemini API for intelligent recommendations and chatbot
 
 ## Get Started
