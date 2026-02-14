@@ -90,7 +90,9 @@ const Onboarding: React.FC = () => {
         allergies: formData.allergies,
       });
 
-      navigate('/your-profile');
+      // Defer navigation to next tick so AuthProvider state (hasCompletedOnboarding) propagates
+      // before ProtectedRoute checks it, avoiding redirect back to onboarding
+      setTimeout(() => navigate('/your-profile'), 0);
     } catch (err) {
       setError('Failed to save your information. Please try again.');
     }

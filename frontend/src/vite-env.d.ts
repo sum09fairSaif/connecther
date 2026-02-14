@@ -11,5 +11,3 @@ declare module "./Components/RegisterForm/RegisterForm" {
   const RegisterForm: ComponentType;
   export default RegisterForm;
 }
-
-

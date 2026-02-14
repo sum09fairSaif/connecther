@@ -97,7 +97,7 @@ const Dashboard: React.FC = () => {
   ];
 
   const weeklyMilestone = {
-    week: 24,
+    week: weeksPregnant,
     babySize: 'Cantaloupe',
     length: '12 inches',
     development: 'Baby can now hear sounds from outside the womb!'
