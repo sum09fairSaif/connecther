@@ -1,6 +1,7 @@
 import "./Landing.css";
 import { useEffect } from "react";
-import brandLogo from "../Assets/full_logo.png";
+import mainLogo from "../Assets/connecther-logo.png";
+import textLogo from "../Assets/text-logo.png";
 import heroImage from "../Assets/doctor-consultation.png";
 
 function Landing() {
@@ -26,7 +27,8 @@ function Landing() {
 
       <header>
         <h1 className="logo">
-          <img src={brandLogo} alt="ConnectHER logo" className="logo-img" />
+          <img src={mainLogo} alt="" className="logo-img logo-main" />
+          <img src={textLogo} alt="ConnectHER" className="logo-img logo-text" />
         </h1>
         <div className="container">
           <nav>
