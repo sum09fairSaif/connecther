@@ -7,7 +7,7 @@ import textLogo from "../Assets/text-logo.png";
 import heroImage from "../Assets/doctor-consultation.png";
 
 function Landing() {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     const displayName = user?.name || "Guest";
@@ -39,17 +39,10 @@ function Landing() {
           <nav>
             <ul className="nav-links">
               <li>
-                <Link to={isAuthenticated ? "/your-profile" : "/login"}>
-                  {isAuthenticated ? "Logged In" : "Login"}
-                </Link>
+                <Link to="/login">Login</Link>
               </li>
               <li>
                 <Link to="/register">Register</Link>
-              </li>
-              <li>
-                <Link to={isAuthenticated ? "/your-profile" : "/login"}>
-                  Your Profile
-                </Link>
               </li>
             </ul>
           </nav>
