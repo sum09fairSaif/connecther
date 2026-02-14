@@ -8,9 +8,13 @@ const LoginForm = () => {
   return (
     <div className="wrapper">
       <form action="">
-        <h1>Login</h1>
+        <h1>Parent/Caregiver Login</h1>
         <div className="input-box">
-          <input type="text" placeholder="Username" required />
+          <input type="email" placeholder="Parent/Caregiver Email" required />
+          <FaUser className="icon" />
+        </div>
+        <div className="input-box">
+          <input type="text" placeholder="Child's First + Last Name" required />
           <FaUser className="icon" />
         </div>
         <div className="input-box">

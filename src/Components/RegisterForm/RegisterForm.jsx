@@ -8,17 +8,21 @@ const RegisterForm = () => {
   return (
     <div className="wrapper">
       <form action="">
-        <h1>Register</h1>
+        <h1>Parent/Caregiver Registration</h1>
         <div className="input-box">
-          <input type="text" placeholder="First Name" required />
+          <input type="text" placeholder="Child's First + Last Name" required />
           <FaUser className="icon" />
         </div>
         <div className="input-box">
-          <input type="text" placeholder="Last Name" required />
+          <input
+            type="text"
+            placeholder="Parent/Caregiver First + Last Name"
+            required
+          />
           <FaUser className="icon" />
         </div>
         <div className="input-box">
-          <input type="text" placeholder="Username" required />
+          <input type="email" placeholder="Parent/Caregiver Email" required />
           <FaUser className="icon" />
         </div>
         <div className="input-box">
