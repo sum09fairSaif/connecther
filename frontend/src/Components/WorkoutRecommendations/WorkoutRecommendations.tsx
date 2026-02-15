@@ -132,14 +132,14 @@ export default function WorkoutRecommendations() {
           <h1
             style={{
               fontFamily: "'Playfair Display', serif",
-              fontSize: "clamp(36px, 6vw, 48px)",
+              fontSize: "clamp(42px, 8vw, 56px)",
               fontWeight: 700,
               color: "#4A2A4A",
               margin: "0 0 12px",
               lineHeight: 1.2,
             }}
           >
-            We've Got You
+            We've Got You!
           </h1>
           <p
             style={{
@@ -149,7 +149,7 @@ export default function WorkoutRecommendations() {
               fontWeight: 500,
             }}
           >
-            Here are your workout recommendations
+            Here are your personalized workouts
           </p>
         </div>
 
@@ -214,10 +214,11 @@ export default function WorkoutRecommendations() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "32px",
+                            fontSize: "14px",
+                            color: "#8B7B8B",
                           }}
                         >
-                          🎥
+                          Video
                         </div>
                       )}
                     </div>
@@ -254,7 +255,7 @@ export default function WorkoutRecommendations() {
                               gap: "4px",
                             }}
                           >
-                            ⏱️ {Number(rec.workout.duration_minutes ?? rec.workout.duration)} min
+                            {Number(rec.workout.duration_minutes ?? rec.workout.duration)} min
                           </span>
                         )}
                         {rec.workout.intensity != null && rec.workout.intensity !== "" && (
@@ -267,7 +268,7 @@ export default function WorkoutRecommendations() {
                               gap: "4px",
                             }}
                           >
-                            💪 {String(rec.workout.intensity)}
+                            {String(rec.workout.intensity)}
                           </span>
                         )}
                       </div>
