@@ -1,10 +1,10 @@
 import type { Doctor } from "../FindDoctor";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { insuranceOptions } from "../data/options";
 
 type Props = {
   doctor: Doctor | null;
-  onConfirm: () => void;
+  onConfirm: (payload: { insurance: string; appointmentTime: string }) => void;
   userInsurance?: string;
 };
 
@@ -13,7 +13,15 @@ export default function BookingPanel({ doctor, onConfirm, userInsurance }: Props
     userInsurance || doctor?.accepts || "",
   );
   const [selectedTime, setSelectedTime] = useState("");
-  const disabled = !doctor;
+  const canConfirm = !!doctor && !!selectedInsurance && !!selectedTime;
+
+  useEffect(() => {
+    setSelectedInsurance(userInsurance || doctor?.accepts || "");
+  }, [doctor, userInsurance]);
+
+  useEffect(() => {
+    setSelectedTime("");
+  }, [doctor]);
 
   return (
     <div className="card pad">
@@ -95,7 +103,13 @@ export default function BookingPanel({ doctor, onConfirm, userInsurance }: Props
         </div>
       )}
 
-      <button onClick={onConfirm} disabled={disabled} className="fd-confirm-btn">
+      <button
+        onClick={() =>
+          onConfirm({ insurance: selectedInsurance, appointmentTime: selectedTime })
+        }
+        disabled={!canConfirm}
+        className="fd-confirm-btn"
+      >
         Confirm Appointment
       </button>
     </div>

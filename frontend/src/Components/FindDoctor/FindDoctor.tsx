@@ -4,6 +4,8 @@ import FiltersBar from "./components/FiltersBar";
 import MapPanel from "./components/MapPanel";
 import DoctorList from "./components/DoctorList";
 import BookingPanel from "./components/BookingPanel";
+import { useAuth } from "../../context/AuthContext";
+import { addAppointmentForUser } from "../../services/appointments.storage";
 
 export type Doctor = {
   id: string;
@@ -123,6 +125,7 @@ const BOSTON_DOCTORS: Doctor[] = [
 ];
 
 export default function FindDoctorPage() {
+  const { user, isAuthenticated } = useAuth();
   const [zip, setZip] = useState("");
   const [insurance, setInsurance] = useState("");
   const [specialty, setSpecialty] = useState("");
@@ -189,9 +192,25 @@ export default function FindDoctorPage() {
           <BookingPanel
             doctor={selectedDoctor}
             userInsurance={insurance}
-            onConfirm={() => {
+            onConfirm={({ insurance: selectedInsurance, appointmentTime }) => {
               if (!selectedDoctor) return;
-              alert(`Confirmed appointment with ${selectedDoctor.name}!`);
+              if (!isAuthenticated || !user?.email) {
+                alert("Please log in to schedule and save appointments.");
+                return;
+              }
+
+              addAppointmentForUser(user.email, {
+                doctorId: selectedDoctor.id,
+                doctorName: selectedDoctor.name,
+                specialty: selectedDoctor.specialty,
+                insurance: selectedInsurance,
+                appointmentTime,
+                city: selectedDoctor.city,
+                state: selectedDoctor.state,
+                npi: selectedDoctor.npi,
+              });
+
+              alert(`Appointment scheduled with ${selectedDoctor.name}.`);
             }}
           />
         </aside>

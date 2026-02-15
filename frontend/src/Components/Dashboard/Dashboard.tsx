@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useEffect, useMemo, useState } from "react";
 import fullLogo from "../Assets/full-logo.png";
 import "./Dashboard.css";
+import { getAppointmentsForUser, type StoredAppointment } from "../../services/appointments.storage";
 
 function splitName(fullName?: string) {
   if (!fullName) return { firstName: "User", lastName: "" };
@@ -70,6 +71,7 @@ function Dashboard() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [appointments, setAppointments] = useState<StoredAppointment[]>([]);
   const [form, setForm] = useState({
     age: "",
     location: "",
@@ -104,6 +106,14 @@ function Dashboard() {
       weeksPregnant: user?.weeksPregnant !== undefined ? String(user.weeksPregnant) : "",
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!user?.email) {
+      setAppointments([]);
+      return;
+    }
+    setAppointments(getAppointmentsForUser(user.email));
+  }, [user?.email]);
 
   const { firstName, lastName } = splitName(user?.name);
   const avatarInitials = `${firstName.charAt(0)}${lastName.charAt(0)}`
@@ -330,6 +340,33 @@ function Dashboard() {
                     {isSaving ? "Saving..." : "Save Profile"}
                   </button>
                 </div>
+              </div>
+            )}
+          </section>
+
+          <section className="dashboard-card appointments-card">
+            <h2 className="card-title">Upcoming Appointments</h2>
+            {appointments.length === 0 ? (
+              <p className="appointments-empty">
+                No appointments scheduled yet. Book one from Find a Doctor.
+              </p>
+            ) : (
+              <div className="appointments-list">
+                {appointments.map((appointment) => (
+                  <div className="appointment-row" key={appointment.id}>
+                    <div className="appointment-main">
+                      <div className="appointment-doctor">{appointment.doctorName}</div>
+                      <div className="appointment-specialty">{appointment.specialty}</div>
+                    </div>
+                    <div className="appointment-meta">
+                      <div>{appointment.appointmentTime}</div>
+                      <div>{appointment.insurance}</div>
+                      <div>
+                        {[appointment.city, appointment.state].filter(Boolean).join(", ") || "-"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
