@@ -6,6 +6,7 @@ import workoutRoutes from './workouts.js';  // Add .js extension
 import checkInRoutes from './checkIn.js';
 import favoritesRoutes from './favorites.js';
 import profileRoutes from './profile.js';
+import doctorsRoutes from './doctors.js';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/workouts', workoutRoutes);
 router.use('/check-in', checkInRoutes);
 router.use('/favorites', favoritesRoutes);
 router.use('/profile', profileRoutes);
+router.use('/doctors', doctorsRoutes);
 
 export default router;
