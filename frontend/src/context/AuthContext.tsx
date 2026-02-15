@@ -38,7 +38,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
-  updateUserProfile: (profileData: UserProfileData) => Promise<void>;
+  updateUserProfile: (profileData: Partial<UserProfileData>) => Promise<void>;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   isAuthLoading: boolean;
@@ -197,7 +197,7 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(LOCAL_USER_STORAGE_KEY);
   };
 
-  const updateUserProfile = async (profileData: UserProfileData): Promise<void> => {
+  const updateUserProfile = async (profileData: Partial<UserProfileData>): Promise<void> => {
     if (!user) return;
     const updatedUser: User = {
       ...user,
@@ -317,9 +317,10 @@ function Auth0BackedAuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateUserProfile = async (incomingProfile: UserProfileData): Promise<void> => {
+  const updateUserProfile = async (incomingProfile: Partial<UserProfileData>): Promise<void> => {
     if (!storageId) return;
     const nextProfile: Partial<User> = {
+      ...profileData,
       ...incomingProfile,
       hasCompletedOnboarding: true,
     };
