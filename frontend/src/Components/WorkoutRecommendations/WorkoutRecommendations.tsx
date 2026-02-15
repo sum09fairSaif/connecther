@@ -130,14 +130,14 @@ export default function WorkoutRecommendations() {
           <h1
             style={{
               fontFamily: "'Playfair Display', serif",
-              fontSize: "clamp(36px, 6vw, 48px)",
+              fontSize: "clamp(42px, 8vw, 56px)",
               fontWeight: 700,
               color: "#4A2A4A",
               margin: "0 0 12px",
               lineHeight: 1.2,
             }}
           >
-            We've Got You
+            We've Got You!
           </h1>
           <p
             style={{
@@ -178,7 +178,7 @@ export default function WorkoutRecommendations() {
 
         {/* Workout Cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-          {recommendations.map((workout, index) => {
+          {recommendations.map((workout) => {
             const thumbnailUrl = getYouTubeThumbnail(workout.youtube_id);
 
             return (
@@ -257,10 +257,11 @@ export default function WorkoutRecommendations() {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "32px",
+                            fontSize: "14px",
+                            color: "#8B7B8B",
                           }}
                         >
-                          🎥
+                          Video
                         </div>
                       )}
                     </div>
@@ -296,7 +297,7 @@ export default function WorkoutRecommendations() {
                             gap: "4px",
                           }}
                         >
-                          ⏱️ {workout.duration} min
+                          {workout.duration} min
                         </span>
                         <span
                           style={{
@@ -308,7 +309,7 @@ export default function WorkoutRecommendations() {
                             textTransform: "capitalize",
                           }}
                         >
-                          💪 {workout.intensity_level}
+                          {workout.intensity_level}
                         </span>
                         <span
                           style={{
@@ -320,7 +321,7 @@ export default function WorkoutRecommendations() {
                             textTransform: "capitalize",
                           }}
                         >
-                          🏋️ {workout.workout_type.replace(/_/g, ' ')}
+                          {workout.workout_type.replace(/_/g, ' ')}
                         </span>
                       </div>
                     </div>
