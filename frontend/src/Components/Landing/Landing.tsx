@@ -54,17 +54,24 @@ function Landing() {
           <img src={textLogo} alt="ConnectHER" className="logo-img logo-text" />
         </h1>
         <div className="container" ref={navWrapRef}>
-          <button
-            type="button"
+          <div
             className="hamburger"
+            role="button"
+            tabIndex={0}
             aria-label="Toggle navigation menu"
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((prev) => !prev)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setMenuOpen((prev) => !prev);
+              }
+            }}
           >
             <span />
             <span />
             <span />
-          </button>
+          </div>
           <nav className={menuOpen ? "nav open" : "nav"}>
             <ul className="nav-links">
               <li>

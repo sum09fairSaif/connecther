@@ -1,11 +1,27 @@
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import type { WorkoutRecommendation } from "../../types/api";
+
+interface Workout {
+  id: string;
+  title: string;
+  youtube_url: string;
+  youtube_id: string;
+  duration: number;
+  intensity_level: string;
+  workout_type: string;
+  description: string;
+  reasoning: string; // From Gemini AI
+  good_for_symptoms?: string[];
+}
 
 interface LocationState {
-  recommendations: WorkoutRecommendation[];
-  aiMessage: string;
-  checkInId: string;
+  recommendations: Workout[];
+  message: string; // AI's encouraging message (changed from aiMessage)
+  checkInId?: string;
+}
+
+function getYouTubeThumbnail(youtubeId: string): string {
+  return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
 }
 
 export default function Recommendations() {
@@ -13,9 +29,14 @@ export default function Recommendations() {
   const navigate = useNavigate();
   const state = location.state as LocationState;
 
+  // debug logs
+  console.log('Full state:', state);
+  console.log('Recommendations:', state?.recommendations);
+  console.log('Message:', state?.message);
+
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
 
-  if (!state || !state.recommendations) {
+  if (!state || !state.recommendations || state.recommendations.length === 0) {
     return (
       <div
         style={{
@@ -45,13 +66,7 @@ export default function Recommendations() {
     );
   }
 
-  const { recommendations, aiMessage } = state;
-
-  const getMatchColor = (score: number) => {
-    if (score >= 0.8) return { bg: "#E8F5E9", text: "#2E7D32", label: "Excellent Match" };
-    if (score >= 0.6) return { bg: "#FFF3E0", text: "#E65100", label: "Good Match" };
-    return { bg: "#F3E5F5", text: "#6B3A6B", label: "Recommended" };
-  };
+  const { recommendations, message } = state;
 
   return (
     <div
@@ -135,7 +150,7 @@ export default function Recommendations() {
           >
             Your Personalized Workouts
           </h1>
-          {aiMessage && (
+          {message && (
             <div
               style={{
                 maxWidth: "600px",
@@ -149,20 +164,20 @@ export default function Recommendations() {
                 lineHeight: 1.6,
               }}
             >
-              {aiMessage}
+              💜 {message}
             </div>
           )}
         </div>
 
         {/* Recommendations List */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          {recommendations.map((rec, index) => {
-            const matchInfo = getMatchColor(rec.match_score);
-            const isExpanded = expandedWorkout === rec.workout.id;
+          {recommendations.map((workout, index) => {
+            const isExpanded = expandedWorkout === workout.id;
+            const thumbnailUrl = getYouTubeThumbnail(workout.youtube_id);
 
             return (
               <div
-                key={rec.workout.id}
+                key={workout.id}
                 style={{
                   background: "rgba(255,255,255,0.9)",
                   borderRadius: "20px",
@@ -172,7 +187,7 @@ export default function Recommendations() {
                   transition: "all 0.3s ease",
                   cursor: "pointer",
                 }}
-                onClick={() => setExpandedWorkout(isExpanded ? null : rec.workout.id)}
+                onClick={() => setExpandedWorkout(isExpanded ? null : workout.id)}
               >
                 <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
                   {/* Rank Badge */}
@@ -196,48 +211,31 @@ export default function Recommendations() {
 
                   <div style={{ flex: 1 }}>
                     {/* Workout Title */}
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "12px" }}>
-                      <h3
-                        style={{
-                          fontSize: "20px",
-                          fontWeight: 600,
-                          color: "#4A2A4A",
-                          margin: 0,
-                        }}
-                      >
-                        {rec.workout.title}
-                      </h3>
-
-                      {/* Match Badge */}
-                      <span
-                        style={{
-                          padding: "6px 12px",
-                          borderRadius: "20px",
-                          background: matchInfo.bg,
-                          color: matchInfo.text,
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {Math.round(rec.match_score * 100)}% Match
-                      </span>
-                    </div>
+                    <h3
+                      style={{
+                        fontSize: "20px",
+                        fontWeight: 600,
+                        color: "#4A2A4A",
+                        margin: "0 0 12px",
+                      }}
+                    >
+                      {workout.title}
+                    </h3>
 
                     {/* Workout Details */}
                     <div style={{ display: "flex", gap: "16px", marginBottom: "12px", flexWrap: "wrap" }}>
                       <span style={{ fontSize: "14px", color: "#8B7B8B", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span>⏱️</span> {rec.workout.duration_minutes} min
+                        <span>⏱️</span> {workout.duration} min
                       </span>
-                      <span style={{ fontSize: "14px", color: "#8B7B8B", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span>💪</span> {rec.workout.intensity}
+                      <span style={{ fontSize: "14px", color: "#8B7B8B", display: "flex", alignItems: "center", gap: "6px", textTransform: "capitalize" }}>
+                        <span>💪</span> {workout.intensity_level}
                       </span>
-                      <span style={{ fontSize: "14px", color: "#8B7B8B", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span>🧘</span> {rec.workout.type}
+                      <span style={{ fontSize: "14px", color: "#8B7B8B", display: "flex", alignItems: "center", gap: "6px", textTransform: "capitalize" }}>
+                        <span>🧘</span> {workout.workout_type.replace(/_/g, ' ')}
                       </span>
                     </div>
 
-                    {/* AI Reason */}
+                    {/* AI Reasoning */}
                     <div
                       style={{
                         padding: "12px 16px",
@@ -249,7 +247,7 @@ export default function Recommendations() {
                         marginBottom: isExpanded ? "16px" : 0,
                       }}
                     >
-                      <strong>Why this workout:</strong> {rec.reason}
+                      <strong>✨ Why this workout:</strong> {workout.reasoning}
                     </div>
 
                     {/* Expanded Details */}
@@ -262,17 +260,32 @@ export default function Recommendations() {
                           animation: "fadeIn 0.3s ease-out",
                         }}
                       >
+                        {/* Thumbnail */}
+                        {thumbnailUrl && (
+                          <div style={{ marginBottom: "16px", borderRadius: "12px", overflow: "hidden" }}>
+                            <img
+                              src={thumbnailUrl}
+                              alt={workout.title}
+                              style={{
+                                width: "100%",
+                                maxHeight: "300px",
+                                objectFit: "cover",
+                              }}
+                            />
+                          </div>
+                        )}
+
                         <p style={{ fontSize: "14px", color: "#6B3A6B", lineHeight: 1.6, marginBottom: "16px" }}>
-                          {rec.workout.description}
+                          {workout.description}
                         </p>
 
-                        {rec.workout.benefits && rec.workout.benefits.length > 0 && (
+                        {workout.good_for_symptoms && workout.good_for_symptoms.length > 0 && (
                           <div style={{ marginBottom: "16px" }}>
                             <strong style={{ fontSize: "14px", color: "#5C3A5C", display: "block", marginBottom: "8px" }}>
-                              Benefits:
+                              Helps with:
                             </strong>
                             <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                              {rec.workout.benefits.map((benefit, i) => (
+                              {workout.good_for_symptoms.map((symptom, i) => (
                                 <span
                                   key={i}
                                   style={{
@@ -282,51 +295,43 @@ export default function Recommendations() {
                                     color: "#2E7D32",
                                     fontSize: "13px",
                                     fontWeight: 500,
+                                    textTransform: "capitalize",
                                   }}
                                 >
-                                  {benefit}
+                                  {symptom.replace(/_/g, ' ')}
                                 </span>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {rec.workout.trimester && rec.workout.trimester.length > 0 && (
-                          <div style={{ marginBottom: "16px" }}>
-                            <strong style={{ fontSize: "14px", color: "#5C3A5C" }}>Suitable for: </strong>
-                            <span style={{ fontSize: "14px", color: "#6B3A6B" }}>
-                              {rec.workout.trimester.map(t => `Trimester ${t}`).join(", ")}
-                            </span>
-                          </div>
-                        )}
-
-                        {rec.workout.video_url && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(rec.workout.video_url, "_blank");
-                            }}
-                            style={{
-                              padding: "12px 24px",
-                              borderRadius: "12px",
-                              border: "none",
-                              background: "linear-gradient(135deg, #C8A2C8, #D4A5C8)",
-                              color: "white",
-                              fontSize: "14px",
-                              fontWeight: 600,
-                              cursor: "pointer",
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = "scale(1.05)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = "scale(1)";
-                            }}
-                          >
-                            Watch Video 🎥
-                          </button>
-                        )}
+                        {/* Watch Video Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(workout.youtube_url, "_blank");
+                          }}
+                          style={{
+                            padding: "12px 24px",
+                            borderRadius: "12px",
+                            border: "none",
+                            background: "linear-gradient(135deg, #C8A2C8, #D4A5C8)",
+                            color: "white",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                            width: "100%",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "scale(1.02)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "scale(1)";
+                          }}
+                        >
+                          Watch Video on YouTube 🎥
+                        </button>
                       </div>
                     )}
 

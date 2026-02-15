@@ -10,12 +10,135 @@ const router = Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const TRANSIENT_GEMINI_RETRY_LIMIT = 1;
+const MAX_RETRY_DELAY_MS = 30_000;
 
 /** Convert email or other string to a valid UUID for DB storage. */
 function toStoredUserId(id: string): string {
   if (UUID_REGEX.test(id)) return id;
   const hash = createHash('sha256').update(id).digest('hex');
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeTextArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim().toLowerCase() : ''))
+    .filter(Boolean);
+}
+
+function parseRetryDelayMs(errorMessage: string): number | null {
+  // Supports both "retryDelay":"20s" and "Please retry in 20.8s" variants.
+  const retryDelayMatch = errorMessage.match(/retryDelay["']?\s*:\s*["']?(\d+(?:\.\d+)?)s/i);
+  const retryInMatch = errorMessage.match(/retry in\s+(\d+(?:\.\d+)?)s/i);
+  const seconds = retryDelayMatch?.[1] || retryInMatch?.[1];
+  if (!seconds) return null;
+  const ms = Math.ceil(Number(seconds) * 1000);
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  return Math.min(ms, MAX_RETRY_DELAY_MS);
+}
+
+function isRateLimitError(errorMessage: string): boolean {
+  return (
+    errorMessage.includes('429') ||
+    errorMessage.toLowerCase().includes('too many requests') ||
+    errorMessage.toLowerCase().includes('quota exceeded')
+  );
+}
+
+function isDailyQuotaError(errorMessage: string): boolean {
+  return /perday|daily|GenerateRequestsPerDayPerProjectPerModel-FreeTier/i.test(errorMessage);
+}
+
+function scoreWorkout(
+  workout: Record<string, any>,
+  selectedSymptoms: string[],
+  selectedMoods: string[],
+  energyLevel: number,
+): number {
+  let score = 0;
+  const intensityValue =
+    typeof workout.intensity_level === 'number'
+      ? workout.intensity_level
+      : Number(workout.intensity_level) || 2;
+  const desiredIntensity = energyLevel <= 2 ? 1 : energyLevel === 3 ? 2 : 3;
+  score += Math.max(0, 3 - Math.abs(intensityValue - desiredIntensity));
+
+  const workoutSymptoms = normalizeTextArray(workout.good_for_symptoms);
+  const symptomOverlap = selectedSymptoms.filter((s) => workoutSymptoms.includes(s)).length;
+  score += symptomOverlap * 3;
+
+  const typeText = `${String(workout.workout_type || '')} ${String(workout.title || '')}`.toLowerCase();
+  const wantsCalming = selectedMoods.some((m) => ['anxious', 'fear', 'moody', 'frustrated'].includes(m));
+  const wantsActive = selectedMoods.some((m) => ['energetic', 'productive', 'happy'].includes(m));
+  if (wantsCalming && /(yoga|stretch|breath|calm|mobility)/.test(typeText)) score += 2;
+  if (wantsActive && /(cardio|strength|pilates|active)/.test(typeText)) score += 2;
+
+  return score;
+}
+
+function buildFallbackRecommendations(
+  allWorkouts: Record<string, any>[],
+  symptoms: string[],
+  moods: string[],
+  energyLevel: number,
+) {
+  const normalizedSymptoms = normalizeTextArray(symptoms);
+  const normalizedMoods = normalizeTextArray(moods);
+
+  const sorted = [...allWorkouts].sort((a, b) => {
+    const scoreB = scoreWorkout(b, normalizedSymptoms, normalizedMoods, energyLevel);
+    const scoreA = scoreWorkout(a, normalizedSymptoms, normalizedMoods, energyLevel);
+    return scoreB - scoreA;
+  });
+
+  const top = sorted.slice(0, 3);
+
+  return {
+    recommendations: top.map((workout) => ({
+      workout_id: String(workout.id),
+      title: String(workout.title || 'Recommended Workout'),
+      reasoning:
+        'Picked based on your reported symptoms, mood, and current energy level, with first-trimester safety in mind.',
+    })),
+    overall_message:
+      'Personalized recommendations are ready. These picks are matched to your check-in and designed to be gentle and safe.',
+  };
+}
+
+async function generateGeminiResponseWithRetry(prompt: string) {
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  let attempts = 0;
+
+  while (attempts <= TRANSIENT_GEMINI_RETRY_LIMIT) {
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(cleanText);
+    } catch (error: any) {
+      const message = String(error?.message || error || '');
+      const shouldRetry =
+        attempts < TRANSIENT_GEMINI_RETRY_LIMIT &&
+        isRateLimitError(message) &&
+        !isDailyQuotaError(message);
+
+      if (!shouldRetry) {
+        throw error;
+      }
+
+      const delayMs = parseRetryDelayMs(message) ?? 3000;
+      await sleep(delayMs);
+      attempts += 1;
+    }
+  }
+
+  throw new Error('Gemini retry exhausted');
 }
 
 // POST /api/check-in - Submit daily check-in and get Gemini recommendations
@@ -98,26 +221,21 @@ Respond in this EXACT JSON format (no markdown, just valid JSON):
   "overall_message": "A supportive, encouraging message for the user (2-3 sentences)"
 }`;
 
-    // Call Gemini API
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // Parse Gemini's response
-    let geminiResponse;
+    // Call Gemini API (with retry), then fallback locally if quota/rate-limit/unavailable
+    let geminiResponse: any;
+    let usedFallbackRecommendations = false;
     try {
-      // Remove markdown code blocks if present
-      const cleanText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      geminiResponse = JSON.parse(cleanText);
-    } catch (parseError) {
-      console.error('Failed to parse Gemini response:', text);
-      throw new Error('Invalid response from AI');
+      geminiResponse = await generateGeminiResponseWithRetry(prompt);
+    } catch (geminiError: any) {
+      const geminiErrorMessage = String(geminiError?.message || geminiError || '');
+      console.error('Gemini unavailable, using local recommendation fallback:', geminiErrorMessage);
+      geminiResponse = buildFallbackRecommendations(allWorkouts || [], symptoms, moods, Number(energy_level));
+      usedFallbackRecommendations = true;
     }
 
     // Extract workout IDs - validate they are real UUIDs (Gemini can hallucinate wrong values)
     const validWorkoutIds = new Set((allWorkouts || []).map((w: any) => String(w.id)));
-    const recommendedWorkoutIds = geminiResponse.recommendations
+    const recommendedWorkoutIds = (geminiResponse?.recommendations || [])
       .map((r: any) => r.workout_id)
       .filter((id: unknown) => typeof id === 'string' && UUID_REGEX.test(id) && validWorkoutIds.has(id));
 
@@ -171,13 +289,18 @@ Respond in this EXACT JSON format (no markdown, just valid JSON):
       recommendations: workoutsWithReasoning,
       message: geminiResponse.overall_message,
       ai_message: geminiResponse.overall_message,
-      gemini_insights: geminiResponse
+      gemini_insights: geminiResponse,
+      used_fallback_recommendations: usedFallbackRecommendations
     });
   } catch (error: any) {
     console.error('Error processing check-in:', error);
+    const errorMessage = String(error?.message || '');
+    const clientError = isRateLimitError(errorMessage)
+      ? 'Recommendation service is temporarily rate-limited. Please retry shortly.'
+      : error.message || 'Failed to process check-in';
     return res.status(500).json({
       success: false,
-      error: error.message || 'Failed to process check-in'
+      error: clientError
     });
   }
 });

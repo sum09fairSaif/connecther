@@ -526,23 +526,25 @@ header .container {
    <nav className={menuOpen ? "nav open" : "nav"}>
    ========================= */
 
-/* Desktop: show normal nav, hide hamburger */
+/* Always show hamburger trigger */
 .hamburger {
-  display: none;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 10px;
-  border-radius: 14px;
+  padding: 6px;
+  border-radius: 0;
   transition:
-    background 160ms ease,
     transform 160ms ease;
   position: relative;
   z-index: 7; /* above dropdown */
+  box-shadow: none;
 }
 
 .hamburger:hover {
-  background: rgba(139, 124, 246, 0.12);
   transform: translateY(-1px);
 }
 
@@ -557,71 +559,51 @@ header .container {
 
 /* Make sure nav has a class to target (default desktop) */
 .nav {
-  display: block; /* your nav-links already handle flex */
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(260px, 84vw);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(140, 120, 246, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(30, 20, 60, 0.14);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 6;
 }
 
-/* Mobile: show hamburger, collapse nav into dropdown */
-@media (max-width: 1280px) {
-  .hamburger {
-    display: inline-flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
+.nav.open {
+  display: block;
+}
 
-  /* remove the negative margin that looks weird on mobile */
-  .nav-links {
-    margin-top: 0;
-  }
+.nav-links {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
 
-  /* Turn the nav into a dropdown panel */
-  .nav {
-    display: none;
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    width: min(260px, 84vw);
-    padding: 12px;
+.nav-links li {
+  width: 100%;
+}
 
-    background: rgba(255, 255, 255, 0.85);
-    border: 1px solid rgba(140, 120, 246, 0.18);
-    border-radius: 18px;
-    box-shadow: 0 18px 50px rgba(30, 20, 60, 0.14);
+.nav-links a {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(140, 120, 246, 0.14);
+}
 
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+.nav-links a:hover {
+  background: rgba(139, 124, 246, 0.12);
+  transform: none; /* avoid jumping in dropdown */
+}
 
-    z-index: 6;
-  }
-
-  .nav.open {
-    display: block;
-  }
-
-  /* Stack links vertically inside dropdown */
-  .nav-links {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    flex-wrap: nowrap;
-    gap: 8px;
-  }
-
-  .nav-links li {
-    width: 100%;
-  }
-
-  .nav-links a {
-    display: block;
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.55);
-    border: 1px solid rgba(140, 120, 246, 0.14);
-  }
-
-  .nav-links a:hover {
-    background: rgba(139, 124, 246, 0.12);
-    transform: none; /* avoid jumping in dropdown */
-  }
+@media (max-width: 900px) {
+  .nav { top: calc(100% + 8px); }
 }

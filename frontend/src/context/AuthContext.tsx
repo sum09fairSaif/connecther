@@ -38,7 +38,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
-  updateUserProfile: (profileData: UserProfileData) => Promise<void>;
+  updateUserProfile: (profileData: Partial<UserProfileData>) => Promise<void>;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   isAuthLoading: boolean;
@@ -48,9 +48,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH0_ENABLED = Boolean(
-  import.meta.env.VITE_AUTH0_DOMAIN && import.meta.env.VITE_AUTH0_CLIENT_ID,
-);
+const AUTH0_ENABLED =
+  import.meta.env.VITE_ENABLE_AUTH0 === "true" &&
+  Boolean(import.meta.env.VITE_AUTH0_DOMAIN && import.meta.env.VITE_AUTH0_CLIENT_ID);
 
 const LOCAL_USER_STORAGE_KEY = "user";
 const LOCAL_ACCOUNTS_STORAGE_KEY = "connecther:accounts";
@@ -96,7 +96,18 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
     const savedUser = localStorage.getItem(LOCAL_USER_STORAGE_KEY);
     if (!savedUser) return null;
     try {
-      return JSON.parse(savedUser);
+      const parsedUser = JSON.parse(savedUser) as User;
+      const savedEmail = normalizeEmail(parsedUser?.email || "");
+      const accountExists = readLocalAccounts().some(
+        (account) => normalizeEmail(account.email) === savedEmail,
+      );
+
+      if (!savedEmail || !accountExists) {
+        localStorage.removeItem(LOCAL_USER_STORAGE_KEY);
+        return null;
+      }
+
+      return parsedUser;
     } catch {
       return null;
     }
@@ -186,7 +197,7 @@ function LocalAuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(LOCAL_USER_STORAGE_KEY);
   };
 
-  const updateUserProfile = async (profileData: UserProfileData): Promise<void> => {
+  const updateUserProfile = async (profileData: Partial<UserProfileData>): Promise<void> => {
     if (!user) return;
     const updatedUser: User = {
       ...user,
@@ -272,10 +283,9 @@ function Auth0BackedAuthProvider({ children }: { children: ReactNode }) {
     await loginWithRedirect({
       authorizationParams: {
         login_hint: email || undefined,
-        redirect_uri: `${window.location.origin}/login`,
       },
       appState: {
-        returnTo: "/",
+        returnTo: "/your-profile",
       },
     });
     return true;
@@ -284,7 +294,7 @@ function Auth0BackedAuthProvider({ children }: { children: ReactNode }) {
   const register = async (email: string, _password: string, name: string): Promise<boolean> => {
     setAuthError(null);
 
-    // Store the name in localStorage temporarily so we can use it after Auth0 redirect
+    // Store the name in sessionStorage temporarily so we can use it after Auth0 redirect
     if (name) {
       sessionStorage.setItem('pending-user-name', name);
     }
@@ -293,10 +303,9 @@ function Auth0BackedAuthProvider({ children }: { children: ReactNode }) {
       authorizationParams: {
         screen_hint: "signup",
         login_hint: email || undefined,
-        redirect_uri: `${window.location.origin}/register`,
       },
       appState: {
-        returnTo: "/",
+        returnTo: "/your-profile",
       },
     });
     return true;
@@ -308,9 +317,10 @@ function Auth0BackedAuthProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const updateUserProfile = async (incomingProfile: UserProfileData): Promise<void> => {
+  const updateUserProfile = async (incomingProfile: Partial<UserProfileData>): Promise<void> => {
     if (!storageId) return;
     const nextProfile: Partial<User> = {
+      ...profileData,
       ...incomingProfile,
       hasCompletedOnboarding: true,
     };

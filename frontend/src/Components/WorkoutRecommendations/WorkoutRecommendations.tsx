@@ -1,38 +1,33 @@
 import { useLocation, Link } from "react-router-dom";
 
 interface LocationState {
-  recommendations: Array<Record<string, unknown> & { reasoning?: string }>;
-  aiMessage?: string;
-  checkInId?: string;
+  recommendations: Array<{
+    id: string;
+    title: string;
+    youtube_url: string;
+    youtube_id: string;
+    duration: number;
+    intensity_level: string;
+    workout_type: string;
+    description: string;
+    reasoning: string; // From Gemini AI
+  }>;
+  message: string; // AI's encouraging message
+  checkIn?: {
+    id: string;
+    created_at: string;
+  };
 }
 
-/** Normalize API response - backend may return flat objects with reasoning */
-function normalizeRecommendation(rec: unknown): { workout: Record<string, unknown>; reason: string } {
-  const r = rec as Record<string, unknown>;
-  if (r.workout && typeof r.reason === "string") {
-    return { workout: r.workout as Record<string, unknown>, reason: r.reason };
-  }
-  const { reasoning, ...workout } = r;
-  return { workout, reason: (reasoning as string) || "Recommended for you" };
-}
-
-function getVideoUrl(workout: Record<string, unknown>): string {
-  return (workout.video_url as string) || (workout.youtube_url as string) || "";
-}
-
-function getYouTubeThumbnail(videoUrl: string): string {
-  if (!videoUrl) return "";
-  const match = videoUrl.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/
-  );
-  return match ? `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg` : "";
+function getYouTubeThumbnail(youtubeId: string): string {
+  return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
 }
 
 export default function WorkoutRecommendations() {
   const location = useLocation();
   const state = location.state as LocationState;
 
-  if (!state || !state.recommendations) {
+  if (!state || !state.recommendations || state.recommendations.length === 0) {
     return (
       <div
         style={{
@@ -62,7 +57,7 @@ export default function WorkoutRecommendations() {
     );
   }
 
-  const recommendations = (state.recommendations || []).map(normalizeRecommendation);
+  const { recommendations, message } = state;
 
   return (
     <div
@@ -79,6 +74,7 @@ export default function WorkoutRecommendations() {
         rel="stylesheet"
       />
 
+      {/* Decorative background elements */}
       <div
         style={{
           position: "fixed",
@@ -112,6 +108,7 @@ export default function WorkoutRecommendations() {
           animation: "fadeIn 0.5s ease-out",
         }}
       >
+        {/* Back button */}
         <div style={{ marginBottom: "24px" }}>
           <Link
             to="/symptom-checker"
@@ -128,7 +125,8 @@ export default function WorkoutRecommendations() {
           </Link>
         </div>
 
-        <div style={{ textAlign: "center", marginBottom: "48px" }}>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: "32px" }}>
           <h1
             style={{
               fontFamily: "'Playfair Display', serif",
@@ -153,19 +151,41 @@ export default function WorkoutRecommendations() {
           </p>
         </div>
 
+        {/* AI Encouragement Message */}
+        {message && (
+          <div
+            style={{
+              background: "linear-gradient(135deg, rgba(232,168,200,0.1) 0%, rgba(200,162,200,0.1) 100%)",
+              borderRadius: "16px",
+              padding: "20px 24px",
+              marginBottom: "32px",
+              border: "1px solid rgba(200,162,200,0.2)",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "15px",
+                color: "#4A2A4A",
+                margin: 0,
+                lineHeight: 1.6,
+                fontStyle: "italic",
+              }}
+            >
+              💜 {message}
+            </p>
+          </div>
+        )}
+
+        {/* Workout Cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-          {recommendations.map((rec, index) => {
-            const videoUrl = getVideoUrl(rec.workout);
-            const thumbnailUrl =
-              (rec.workout.thumbnail_url as string) ||
-              (videoUrl ? getYouTubeThumbnail(videoUrl) : "");
-            const workoutId = (rec.workout.id as string) || `rec-${index}`;
+          {recommendations.map((workout) => {
+            const thumbnailUrl = getYouTubeThumbnail(workout.youtube_id);
 
             return (
               <div
-                key={workoutId}
+                key={workout.id}
                 style={{
-                  background: "rgba(255,255,255,0.9)",
+                  background: "rgba(255,255,255,0.95)",
                   borderRadius: "20px",
                   overflow: "hidden",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
@@ -173,8 +193,9 @@ export default function WorkoutRecommendations() {
                   transition: "all 0.3s ease",
                 }}
               >
+                {/* Video Link Section */}
                 <a
-                  href={videoUrl || "#"}
+                  href={workout.youtube_url as string}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -182,9 +203,9 @@ export default function WorkoutRecommendations() {
                     color: "inherit",
                     display: "block",
                   }}
-                  onClick={(e) => !videoUrl && e.preventDefault()}
                 >
                   <div style={{ display: "flex", gap: "20px", padding: "20px" }}>
+                    {/* Thumbnail */}
                     <div
                       style={{
                         width: "200px",
@@ -194,18 +215,40 @@ export default function WorkoutRecommendations() {
                         overflow: "hidden",
                         background: "rgba(200,162,200,0.2)",
                         flexShrink: 0,
+                        position: "relative",
                       }}
                     >
                       {thumbnailUrl ? (
-                        <img
-                          src={thumbnailUrl}
-                          alt=""
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
+                        <>
+                          <img
+                            src={thumbnailUrl}
+                            alt={workout.title}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                          {/* Play button overlay */}
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: "50%",
+                              left: "50%",
+                              transform: "translate(-50%, -50%)",
+                              width: "48px",
+                              height: "48px",
+                              background: "rgba(0,0,0,0.7)",
+                              borderRadius: "50%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "20px",
+                            }}
+                          >
+                            ▶️
+                          </div>
+                        </>
                       ) : (
                         <div
                           style={{
@@ -223,6 +266,7 @@ export default function WorkoutRecommendations() {
                       )}
                     </div>
 
+                    {/* Workout Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <h3
                         style={{
@@ -232,53 +276,62 @@ export default function WorkoutRecommendations() {
                           color: "#4A2A4A",
                           margin: "0 0 8px",
                           lineHeight: 1.4,
-                          textDecoration: "none",
                         }}
                       >
-                        {(rec.workout.title as string) || "Workout"}
+                        {workout.title}
                       </h3>
                       <div
                         style={{
                           display: "flex",
                           gap: "12px",
-                          marginBottom: "8px",
+                          marginBottom: "12px",
                           flexWrap: "wrap",
                         }}
                       >
-                        {(rec.workout.duration_minutes ?? rec.workout.duration) != null && (
-                          <span
-                            style={{
-                              fontSize: "13px",
-                              color: "#8B7B8B",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                            }}
-                          >
-                            {Number(rec.workout.duration_minutes ?? rec.workout.duration)} min
-                          </span>
-                        )}
-                        {rec.workout.intensity != null && rec.workout.intensity !== "" && (
-                          <span
-                            style={{
-                              fontSize: "13px",
-                              color: "#8B7B8B",
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                            }}
-                          >
-                            {String(rec.workout.intensity)}
-                          </span>
-                        )}
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            color: "#8B7B8B",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          {workout.duration} min
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            color: "#8B7B8B",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {workout.intensity_level}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "13px",
+                            color: "#8B7B8B",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            textTransform: "capitalize",
+                          }}
+                        >
+                          {workout.workout_type.replace(/_/g, ' ')}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </a>
 
+                {/* AI Reasoning Section */}
                 <div
                   style={{
-                    padding: "14px 20px",
+                    padding: "16px 20px",
                     background: "rgba(243,232,249,0.5)",
                     borderTop: "1px solid rgba(200,162,200,0.1)",
                   }}
@@ -287,12 +340,45 @@ export default function WorkoutRecommendations() {
                     style={{
                       fontSize: "14px",
                       color: "#6B3A6B",
-                      margin: 0,
-                      lineHeight: 1.5,
+                      margin: "0 0 4px",
+                      fontWeight: 600,
                     }}
                   >
-                    <strong>Good for symptoms:</strong> {rec.reason}
+                    ✨ Why this workout?
                   </p>
+                  <p
+                    style={{
+                      fontSize: "14px",
+                      color: "#6B3A6B",
+                      margin: 0,
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {workout.reasoning}
+                  </p>
+                </div>
+
+                {/* Optional: Favorite Button */}
+                <div style={{ padding: "12px 20px", textAlign: "center" }}>
+                  <button
+                    onClick={() => {
+                      // TODO: Call POST /api/favorites
+                      console.log('Add to favorites:', workout.id);
+                    }}
+                    style={{
+                      background: "linear-gradient(135deg, #E8A8C8 0%, #C8A2C8 100%)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "12px",
+                      padding: "10px 24px",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    ❤️ Save to Favorites
+                  </button>
                 </div>
               </div>
             );
@@ -307,6 +393,10 @@ export default function WorkoutRecommendations() {
         }
         a:hover h3 {
           color: #C8A2C8 !important;
+        }
+        button:hover {
+          transform: scale(1.02);
+          box-shadow: 0 6px 20px rgba(200,162,200,0.3);
         }
       `}</style>
     </div>
