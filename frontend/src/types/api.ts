@@ -98,3 +98,9 @@ export interface DoctorSearchResponse {
   source?: string;
   error?: string;
 }
+
+export interface TtsRequest {
+  text: string;
+  language?: string;
+  voiceId?: string;
+}

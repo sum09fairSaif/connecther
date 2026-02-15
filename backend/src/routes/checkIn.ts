@@ -6,12 +6,83 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const router = Router();
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// Initialize Gemini when configured.
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  : null;
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TRANSIENT_GEMINI_RETRY_LIMIT = 1;
 const MAX_RETRY_DELAY_MS = 30_000;
+
+const LOCAL_WORKOUTS: Record<string, any>[] = [
+  {
+    id: '00000000-0000-0000-0000-000000000101',
+    title: 'Gentle Prenatal Stretch Flow',
+    youtube_url: 'https://www.youtube.com/watch?v=4C-gxOE0j7s',
+    youtube_id: '4C-gxOE0j7s',
+    duration: 12,
+    intensity_level: 'low',
+    workout_type: 'stretching',
+    description: 'A calming, low-impact stretch sequence to reduce stiffness and improve mobility.',
+    good_for_symptoms: ['back_pain', 'sciatica_pain', 'fatigue'],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000102',
+    title: 'Prenatal Breathing and Relaxation',
+    youtube_url: 'https://www.youtube.com/watch?v=SEfs5TJZ6Nk',
+    youtube_id: 'SEfs5TJZ6Nk',
+    duration: 10,
+    intensity_level: 'low',
+    workout_type: 'mindfulness',
+    description: 'Breathing exercises and gentle movement to reduce anxiety and support recovery.',
+    good_for_symptoms: ['headaches', 'nausea', 'weak_in_general'],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000103',
+    title: 'Low-Impact Prenatal Cardio Walk',
+    youtube_url: 'https://www.youtube.com/watch?v=2vQz8TnJ4xQ',
+    youtube_id: '2vQz8TnJ4xQ',
+    duration: 18,
+    intensity_level: 'medium',
+    workout_type: 'cardio',
+    description: 'Moderate-paced prenatal cardio to boost circulation and energy safely.',
+    good_for_symptoms: ['fatigue', 'bloating', 'weakness'],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000104',
+    title: 'Prenatal Core and Posture Basics',
+    youtube_url: 'https://www.youtube.com/watch?v=Cc_vRDbp7JE',
+    youtube_id: 'Cc_vRDbp7JE',
+    duration: 15,
+    intensity_level: 'medium',
+    workout_type: 'strength',
+    description: 'Foundational prenatal-safe core and posture work for better daily comfort.',
+    good_for_symptoms: ['back_pain', 'weak_in_general', 'weak_legs'],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000105',
+    title: 'Prenatal Yoga for Morning Sickness Relief',
+    youtube_url: 'https://www.youtube.com/watch?v=lM6I7mQvX7M',
+    youtube_id: 'lM6I7mQvX7M',
+    duration: 14,
+    intensity_level: 'low',
+    workout_type: 'yoga',
+    description: 'Gentle poses focused on nausea relief, calm breathing, and full-body reset.',
+    good_for_symptoms: ['morning_sickness', 'nausea', 'headaches'],
+  },
+  {
+    id: '00000000-0000-0000-0000-000000000106',
+    title: 'Prenatal Mobility for Hips and Legs',
+    youtube_url: 'https://www.youtube.com/watch?v=8M0wQf2pA5k',
+    youtube_id: '8M0wQf2pA5k',
+    duration: 16,
+    intensity_level: 'low',
+    workout_type: 'mobility',
+    description: 'Hip and leg mobility routine to improve comfort and reduce tension.',
+    good_for_symptoms: ['sciatica_pain', 'weak_legs', 'stomach_pain'],
+  },
+];
 
 /** Convert email or other string to a valid UUID for DB storage. */
 function toStoredUserId(id: string): string {
@@ -111,6 +182,10 @@ function buildFallbackRecommendations(
 }
 
 async function generateGeminiResponseWithRetry(prompt: string) {
+  if (!genAI) {
+    throw new Error('GEMINI_API_KEY is not configured.');
+  }
+
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   let attempts = 0;
 
@@ -171,12 +246,16 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Get ALL workouts from database
-    const { data: allWorkouts, error: workoutsError } = await supabase
-      .from('workouts')
-      .select('*');
+    // Get workouts from Supabase when configured, otherwise use local catalog.
+    let allWorkouts: Record<string, any>[] = LOCAL_WORKOUTS;
+    if (supabase) {
+      const { data, error: workoutsError } = await supabase
+        .from('workouts')
+        .select('*');
 
-    if (workoutsError) throw workoutsError;
+      if (workoutsError) throw workoutsError;
+      allWorkouts = data || [];
+    }
 
     // Build prompt for Gemini
     const prompt = `You are a certified prenatal fitness expert helping a pregnant woman in her first trimester find safe workout videos.
@@ -246,31 +325,45 @@ Respond in this EXACT JSON format (no markdown, just valid JSON):
         : (allWorkouts || []).slice(0, 3).map((w: any) => w.id);
 
     // Get full workout details
-    const { data: recommendedWorkouts, error: fetchError } = await supabase
-      .from('workouts')
-      .select('*')
-      .in('id', idsToUse);
+    let recommendedWorkouts: Record<string, any>[] = [];
+    if (supabase) {
+      const { data, error: fetchError } = await supabase
+        .from('workouts')
+        .select('*')
+        .in('id', idsToUse);
 
-    if (fetchError) throw fetchError;
+      if (fetchError) throw fetchError;
+      recommendedWorkouts = data || [];
+    } else {
+      recommendedWorkouts = idsToUse
+        .map((id: string) => allWorkouts.find((workout) => String(workout.id) === id))
+        .filter(Boolean) as Record<string, any>[];
+    }
 
-    // Save check-in to database with Gemini's reasoning (use storedUserId, never raw email)
-    const { data: checkIn, error: checkInError } = await supabase
-      .from('user_check_ins')
-      .insert({
-        user_id: storedUserId,
-        energy_level,
-        symptoms,
-        moods,
-        preferred_workout_type: preferred_workout_type || null,
-        recommended_workout_ids: idsToUse,
-        gemini_reasoning: JSON.stringify(geminiResponse)
-      })
-      .select()
-      .single();
+    // Save check-in only when Supabase is configured.
+    let checkIn: { id: string; created_at: string } | null = null;
+    if (supabase) {
+      const { data, error: checkInError } = await supabase
+        .from('user_check_ins')
+        .insert({
+          user_id: storedUserId,
+          energy_level,
+          symptoms,
+          moods,
+          preferred_workout_type: preferred_workout_type || null,
+          recommended_workout_ids: idsToUse,
+          gemini_reasoning: JSON.stringify(geminiResponse)
+        })
+        .select()
+        .single();
 
-    if (checkInError) {
-      console.error('Check-in insert failed. storedUserId:', storedUserId, 'raw user_id:', user_id);
-      throw checkInError;
+      if (checkInError) {
+        console.error('Check-in insert failed. storedUserId:', storedUserId, 'raw user_id:', user_id);
+        throw checkInError;
+      }
+      checkIn = data as { id: string; created_at: string };
+    } else {
+      checkIn = { id: `local-${Date.now()}`, created_at: new Date().toISOString() };
     }
 
     // Combine Gemini reasoning with workout details
@@ -290,7 +383,8 @@ Respond in this EXACT JSON format (no markdown, just valid JSON):
       message: geminiResponse.overall_message,
       ai_message: geminiResponse.overall_message,
       gemini_insights: geminiResponse,
-      used_fallback_recommendations: usedFallbackRecommendations
+      used_fallback_recommendations: usedFallbackRecommendations,
+      data_source: supabase ? 'supabase' : 'local-fallback',
     });
   } catch (error: any) {
     console.error('Error processing check-in:', error);
@@ -308,6 +402,10 @@ Respond in this EXACT JSON format (no markdown, just valid JSON):
 // GET /api/check-in/history/:userId - Get user's check-in history
 router.get('/history/:userId', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.json({ success: true, history: [] });
+    }
+
     const { userId } = req.params;
     const { limit = 30 } = req.query;
     const storedUserId = toStoredUserId(String(userId || 'guest'));

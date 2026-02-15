@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import type { SymptomType, MoodType } from "../../types/enums";
@@ -7,6 +7,7 @@ import {
   FiCheck,
   FiZap,
   FiSend,
+  FiVolume2,
 } from "react-icons/fi";
 import {
   TbMoodSmile,
@@ -15,7 +16,6 @@ import {
   TbMoodAngry,
   TbMoodCrazyHappy,
   TbMoodSick,
-  TbZzz,
   TbStarFilled,
 } from "react-icons/tb";
 import {
@@ -36,6 +36,7 @@ import {
   PiHeartBreak,
   PiSmileyXEyes,
 } from "react-icons/pi";
+import { apiService } from "../../services/api.service";
 
 interface SymptomMoodItem {
   label: string;
@@ -100,6 +101,15 @@ const energyIcons = [
   <PiBatteryFull key="5" size={22} />,
 ];
 
+const languageOptions = [
+  { code: "en", label: "English" },
+  { code: "es", label: "Spanish" },
+  { code: "fr", label: "French" },
+  { code: "hi", label: "Hindi" },
+  { code: "ar", label: "Arabic" },
+  { code: "pt", label: "Portuguese" },
+];
+
 function ChipButton({ item, selected, onClick, disabled }: ChipButtonProps) {
   return (
     <button
@@ -129,6 +139,11 @@ export default function SymptomTracker() {
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [energyLevel, setEnergyLevel] = useState<number>(3);
+  const [audioLanguage, setAudioLanguage] = useState<string>("en");
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [audioError, setAudioError] = useState<string>("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCacheRef = useRef<Map<string, string>>(new Map());
   const error = (location.state as { error?: string } | null)?.error ?? "";
 
   const toggleSymptom = (label: string) => {
@@ -172,6 +187,83 @@ export default function SymptomTracker() {
   };
 
   const hasSelection = selectedSymptoms.length > 0 || selectedMoods.length > 0;
+  const audioSummaryText = useMemo(() => {
+    const symptomList = symptoms.map((item) => item.label).join(", ");
+    const moodList = moods.map((item) => item.label).join(", ");
+    const selectedSymptomText =
+      selectedSymptoms.length > 0
+        ? selectedSymptoms.join(", ")
+        : "none";
+    const selectedMoodText =
+      selectedMoods.length > 0
+        ? selectedMoods.join(", ")
+        : "none";
+
+    return [
+      "Daily Check-in.",
+      "Energy Level section. Choose a level from 1 to 5.",
+      `Current energy level is ${energyLevel} out of 5.`,
+      "Symptoms section. What's bothering you? You can select up to 5 symptoms.",
+      `Available symptoms are: ${symptomList}.`,
+      `Currently selected symptoms: ${selectedSymptomText}.`,
+      "Mood section. How's your mood? You can select up to 3 moods.",
+      `Available moods are: ${moodList}.`,
+      `Currently selected moods: ${selectedMoodText}.`,
+      "Button: Get my recommendations.",
+    ].join(" ");
+  }, [energyLevel, selectedMoods, selectedSymptoms]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      for (const objectUrl of audioCacheRef.current.values()) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      audioCacheRef.current.clear();
+    };
+  }, []);
+
+  const handleListen = async () => {
+    setAudioError("");
+    setIsSpeaking(true);
+
+    try {
+      const cacheKey = `${audioLanguage}::${audioSummaryText}`;
+      let audioUrl = audioCacheRef.current.get(cacheKey);
+
+      if (!audioUrl) {
+        const blob = await apiService.synthesizeSpeech({
+          text: audioSummaryText,
+          language: audioLanguage,
+        });
+        audioUrl = URL.createObjectURL(blob);
+        audioCacheRef.current.set(cacheKey, audioUrl);
+      }
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setAudioError("Audio playback failed. Please try again.");
+      };
+      await audio.play();
+    } catch (err) {
+      setIsSpeaking(false);
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Audio unavailable right now.";
+      setAudioError(message);
+    }
+  };
 
   return (
     <div className="sc-page">
@@ -270,7 +362,35 @@ export default function SymptomTracker() {
 
         {/* Submit */}
         <div className="sc-submit-area">
+          <div className="sc-audio-controls">
+            <label htmlFor="audio-language" className="sc-audio-label">
+              Audio language
+            </label>
+            <select
+              id="audio-language"
+              className="sc-audio-select"
+              value={audioLanguage}
+              onChange={(e) => setAudioLanguage(e.target.value)}
+            >
+              {languageOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleListen}
+              disabled={isSpeaking}
+              className="sc-listen-btn"
+              data-active={!isSpeaking}
+            >
+              <FiVolume2 size={16} />
+              {isSpeaking ? "Playing..." : "Listen summary"}
+            </button>
+          </div>
+
           {error && <div className="sc-error">{error}</div>}
+          {audioError && <div className="sc-error">{audioError}</div>}
           <button
             onClick={handleSubmit}
             disabled={!hasSelection}
@@ -499,6 +619,51 @@ export default function SymptomTracker() {
         .sc-submit-area {
           text-align: center;
           padding-top: 8px;
+        }
+        .sc-audio-controls {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-bottom: 14px;
+        }
+        .sc-audio-label {
+          color: #7A6B6B;
+          font-size: 13px;
+          font-weight: 600;
+        }
+        .sc-audio-select {
+          border: 1px solid #E8D0E6;
+          border-radius: 8px;
+          padding: 8px 10px;
+          background: #fff;
+          color: #5C4B4B;
+          font-family: 'DM Sans', sans-serif;
+          font-size: 14px;
+        }
+        .sc-listen-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: none;
+          border-radius: 9px;
+          padding: 9px 14px;
+          background: #DDD4CC;
+          color: #8C837B;
+          font-family: 'DM Sans', sans-serif;
+          font-weight: 600;
+          cursor: not-allowed;
+          transition: all 0.2s ease;
+        }
+        .sc-listen-btn[data-active="true"] {
+          background: #5E746A;
+          color: white;
+          cursor: pointer;
+        }
+        .sc-listen-btn[data-active="true"]:hover {
+          background: #4D6258;
+          transform: translateY(-1px);
         }
         .sc-error {
           margin-bottom: 14px;

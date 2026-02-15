@@ -1,5 +1,7 @@
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FiVolume2 } from "react-icons/fi";
+import { apiService } from "../../services/api.service";
 
 interface LocationState {
   recommendations: Array<{
@@ -21,6 +23,15 @@ interface LocationState {
   };
 }
 
+const languageOptions = [
+  { code: "en", label: "English" },
+  { code: "es", label: "Spanish" },
+  { code: "fr", label: "French" },
+  { code: "hi", label: "Hindi" },
+  { code: "ar", label: "Arabic" },
+  { code: "pt", label: "Portuguese" },
+];
+
 function getYouTubeThumbnail(youtubeId: string): string {
   return `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
 }
@@ -33,12 +44,6 @@ const IconSparkles = ({ size = 28 }: { size?: number }) => (
     <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
     <path d="M5 14l1 3 3 1-1-3-3-1z" />
     <path d="M19 14l1 3 3 1-1-3-3-1z" />
-  </svg>
-);
-
-const IconHeart = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C8A2C8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
   </svg>
 );
 
@@ -78,6 +83,11 @@ export default function WorkoutRecommendations() {
   const navigate = useNavigate();
   const state = location.state as LocationState;
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
+  const [audioLanguage, setAudioLanguage] = useState<string>("en");
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [audioError, setAudioError] = useState<string>("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCacheRef = useRef<Map<string, string>>(new Map());
 
   if (!state || !state.recommendations || state.recommendations.length === 0) {
     return (
@@ -110,6 +120,85 @@ export default function WorkoutRecommendations() {
   }
 
   const { recommendations, message } = state;
+
+  const recommendationsAudioText = useMemo(() => {
+    const intro = message ? `Overview message: ${message}` : "No overview message provided.";
+    const workoutText = recommendations
+      .map((workout, index) => {
+        const symptomsText =
+          workout.good_for_symptoms && workout.good_for_symptoms.length > 0
+            ? `Helps with ${workout.good_for_symptoms.join(", ")}.`
+            : "No specific symptom tags listed.";
+        return [
+          `Recommendation ${index + 1}: ${workout.title}.`,
+          `Duration: ${workout.duration} minutes.`,
+          `Intensity: ${workout.intensity_level}.`,
+          `Type: ${workout.workout_type.replace(/_/g, " ")}.`,
+          `Reasoning: ${workout.reasoning}.`,
+          symptomsText,
+          `Description: ${workout.description}.`,
+        ].join(" ");
+      })
+      .join(" ");
+
+    return [
+      "Workout recommendations page.",
+      "Heading: Your Personalized Workouts.",
+      intro,
+      workoutText,
+      "Action button: Go to Dashboard.",
+    ].join(" ");
+  }, [message, recommendations]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      for (const objectUrl of audioCacheRef.current.values()) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      audioCacheRef.current.clear();
+    };
+  }, []);
+
+  const handleListen = async () => {
+    setAudioError("");
+    setIsSpeaking(true);
+
+    try {
+      const cacheKey = `${audioLanguage}::${recommendationsAudioText}`;
+      let audioUrl = audioCacheRef.current.get(cacheKey);
+
+      if (!audioUrl) {
+        const blob = await apiService.synthesizeSpeech({
+          text: recommendationsAudioText,
+          language: audioLanguage,
+        });
+        audioUrl = URL.createObjectURL(blob);
+        audioCacheRef.current.set(cacheKey, audioUrl);
+      }
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setAudioError("Audio playback failed. Please try again.");
+      };
+      await audio.play();
+    } catch (err) {
+      setIsSpeaking(false);
+      const messageText =
+        err instanceof Error && err.message ? err.message : "Audio unavailable right now.";
+      setAudioError(messageText);
+    }
+  };
 
   return (
     <div
@@ -206,6 +295,61 @@ export default function WorkoutRecommendations() {
             >
               {message}
             </p>
+          )}
+          <div
+            style={{
+              marginTop: "20px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "10px",
+              flexWrap: "wrap",
+            }}
+          >
+            <label style={{ fontSize: "14px", color: "#6B3A6B", fontWeight: 600 }}>
+              Audio language
+            </label>
+            <select
+              value={audioLanguage}
+              onChange={(e) => setAudioLanguage(e.target.value)}
+              style={{
+                border: "1px solid #D9C8E8",
+                borderRadius: "10px",
+                padding: "9px 12px",
+                background: "white",
+                color: "#5C3A5C",
+                fontSize: "14px",
+              }}
+            >
+              {languageOptions.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleListen}
+              disabled={isSpeaking}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                border: "none",
+                borderRadius: "10px",
+                padding: "10px 14px",
+                background: isSpeaking ? "#DDD4CC" : "#5E746A",
+                color: isSpeaking ? "#8C837B" : "white",
+                cursor: isSpeaking ? "not-allowed" : "pointer",
+                fontWeight: 600,
+                fontSize: "14px",
+              }}
+            >
+              <FiVolume2 size={16} />
+              {isSpeaking ? "Playing..." : "Listen page"}
+            </button>
+          </div>
+          {audioError && (
+            <p style={{ marginTop: "10px", color: "#BA6D6D", fontSize: "14px" }}>{audioError}</p>
           )}
         </div>
 

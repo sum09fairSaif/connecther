@@ -7,6 +7,7 @@ import checkInRoutes from './checkIn.js';
 import favoritesRoutes from './favorites.js';
 import profileRoutes from './profile.js';
 import doctorsRoutes from './doctors.js';
+import ttsRoutes from './tts.js';
 
 const router = Router();
 
@@ -28,5 +29,6 @@ router.use('/check-in', checkInRoutes);
 router.use('/favorites', favoritesRoutes);
 router.use('/profile', profileRoutes);
 router.use('/doctors', doctorsRoutes);
+router.use('/tts', ttsRoutes);
 
 export default router;

@@ -9,6 +9,7 @@ import type {
   UserProfile,
   DoctorSearchResult,
   DoctorSearchResponse,
+  TtsRequest,
 } from "../types/api";
 
 // DEMO USER ID - Hardcoded for demo purposes
@@ -53,6 +54,42 @@ class ApiService {
     }
 
     return response.json();
+  }
+
+  private async fetchBlob(
+    endpoint: string,
+    options?: RequestInit
+  ): Promise<Blob> {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      const rawBody = await response.text().catch(() => "");
+      let message = `HTTP error! status: ${response.status}`;
+
+      if (rawBody) {
+        try {
+          const parsedBody = JSON.parse(rawBody) as {
+            error?: string;
+            message?: string;
+          };
+          message = parsedBody.error || parsedBody.message || message;
+        } catch {
+          message = rawBody;
+        }
+      }
+
+      throw new Error(message.slice(0, 350));
+    }
+
+    return response.blob();
   }
 
   // Workouts API
@@ -181,6 +218,13 @@ class ApiService {
 
     const response = await this.fetch<DoctorSearchResponse>(endpoint);
     return response.doctors || [];
+  }
+
+  async synthesizeSpeech(payload: TtsRequest): Promise<Blob> {
+    return this.fetchBlob(API_ENDPOINTS.TTS, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   }
 }
 

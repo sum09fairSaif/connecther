@@ -26,4 +26,7 @@ export const API_ENDPOINTS = {
 
   // Doctors
   DOCTORS_SEARCH: '/doctors/search',
+
+  // Audio / TTS
+  TTS: '/tts',
 } as const;

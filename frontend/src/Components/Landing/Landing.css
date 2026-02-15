@@ -350,6 +350,62 @@ header .container {
   gap: 12px;
 }
 
+.hero-audio-controls {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.hero-audio-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #4a3e63;
+}
+
+.hero-audio-select {
+  border: 1px solid rgba(139, 124, 246, 0.25);
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #4a3e63;
+  font-size: 14px;
+}
+
+.hero-audio-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #5e746a;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.hero-audio-button[data-active="true"]:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.hero-audio-button:disabled {
+  cursor: not-allowed;
+  background: #ddd4cc;
+  color: #8c837b;
+}
+
+.hero-audio-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #ba6d6d;
+}
+
 .hero-visual {
   display: flex;
   justify-content: center;
@@ -511,6 +567,15 @@ header .container {
   }
 
   .service-button {
+    width: 100%;
+  }
+
+  .hero-audio-controls {
+    align-items: stretch;
+  }
+
+  .hero-audio-select,
+  .hero-audio-button {
     width: 100%;
   }
 

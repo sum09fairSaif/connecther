@@ -1,17 +1,33 @@
 import "./Landing.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import mainLogo from "../Assets/connecther-logo.png";
 import textLogo from "../Assets/text-logo.png";
 import heroImage from "../Assets/doctor-consultation.png";
 import womanYoga from "../Assets/woman-yoga.png";
+import { FiVolume2 } from "react-icons/fi";
+import { apiService } from "../../services/api.service";
+
+const languageOptions = [
+  { code: "en", label: "English" },
+  { code: "es", label: "Spanish" },
+  { code: "fr", label: "French" },
+  { code: "hi", label: "Hindi" },
+  { code: "ar", label: "Arabic" },
+  { code: "pt", label: "Portuguese" },
+];
 
 function Landing() {
   const { isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [audioLanguage, setAudioLanguage] = useState<string>("en");
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [audioError, setAudioError] = useState<string>("");
   const location = useLocation();
   const navWrapRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCacheRef = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
     setMenuOpen(false);
@@ -38,6 +54,67 @@ function Landing() {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [menuOpen]);
+
+  const landingAudioText = useMemo(() => {
+    return [
+      "Welcome to ConnectHER.",
+      "Main heading: Accessible Women's Healthcare, Anytime.",
+      "Subheading: Understand your symptoms. Find the right care.",
+      "Primary actions: Symptom Checker and Find a Provider.",
+      "Important information section includes disclaimer, privacy, and inclusive care notice.",
+      "Mission section: ConnectHer empowers women with accessible healthcare guidance, trusted resources, and faster paths to care.",
+      "Navigation links include login, register, and your profile.",
+    ].join(" ");
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      for (const objectUrl of audioCacheRef.current.values()) {
+        URL.revokeObjectURL(objectUrl);
+      }
+      audioCacheRef.current.clear();
+    };
+  }, []);
+
+  const handleListen = async () => {
+    setAudioError("");
+    setIsSpeaking(true);
+
+    try {
+      const cacheKey = `${audioLanguage}::${landingAudioText}`;
+      let audioUrl = audioCacheRef.current.get(cacheKey);
+
+      if (!audioUrl) {
+        const blob = await apiService.synthesizeSpeech({
+          text: landingAudioText,
+          language: audioLanguage,
+        });
+        audioUrl = URL.createObjectURL(blob);
+        audioCacheRef.current.set(cacheKey, audioUrl);
+      }
+
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setAudioError("Audio playback failed. Please try again.");
+      };
+      await audio.play();
+    } catch (err) {
+      setIsSpeaking(false);
+      const message = err instanceof Error && err.message ? err.message : "Audio unavailable right now.";
+      setAudioError(message);
+    }
+  };
 
   return (
     <div className="landing-root">
@@ -109,6 +186,34 @@ function Landing() {
                   Find a Provider
                 </Link>
               </div>
+              <div className="hero-audio-controls">
+                <label htmlFor="landing-audio-language" className="hero-audio-label">
+                  Audio language
+                </label>
+                <select
+                  id="landing-audio-language"
+                  className="hero-audio-select"
+                  value={audioLanguage}
+                  onChange={(e) => setAudioLanguage(e.target.value)}
+                >
+                  {languageOptions.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="hero-audio-button"
+                  onClick={handleListen}
+                  disabled={isSpeaking}
+                  data-active={!isSpeaking}
+                >
+                  <FiVolume2 size={16} />
+                  {isSpeaking ? "Playing..." : "Listen page"}
+                </button>
+              </div>
+              {audioError && <p className="hero-audio-error">{audioError}</p>}
             </div>
             <div className="hero-visual">
               <img
