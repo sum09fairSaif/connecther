@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import "./NameSetup.css";
 
 function NameSetup() {
-  const { user, updateUserProfile } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

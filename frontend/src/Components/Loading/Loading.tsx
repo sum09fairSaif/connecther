@@ -13,10 +13,6 @@ function normalizeSymptoms(symptoms: string[]): string[] {
   return symptoms.map((s) => (s === "weak_arms" ? "weak_arm" : s));
 }
 
-interface LocationState {
-  checkInData: CheckInRequest;
-}
-
 export default function Loading() {
   const navigate = useNavigate();
   const location = useLocation();

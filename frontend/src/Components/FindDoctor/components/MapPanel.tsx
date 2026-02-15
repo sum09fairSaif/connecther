@@ -1,5 +1,5 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -10,19 +10,34 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-export default function MapPanel() {
+type Props = {
+  targetPosition?: [number, number] | null;
+  markerLabel?: string;
+};
+
+export default function MapPanel({ targetPosition, markerLabel }: Props) {
   const [position, setPosition] = useState<[number, number]>([
     42.3601, -71.0589,
   ]);
+  const hasManualSelectionRef = useRef(false);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setPosition([pos.coords.latitude, pos.coords.longitude]);
+        if (!hasManualSelectionRef.current) {
+          setPosition([pos.coords.latitude, pos.coords.longitude]);
+        }
       },
       () => console.log("Location permission denied"),
     );
   }, []);
+
+  useEffect(() => {
+    if (!targetPosition) return;
+
+    hasManualSelectionRef.current = true;
+    setPosition(targetPosition);
+  }, [targetPosition]);
 
   return (
     <MapContainer
@@ -36,7 +51,7 @@ export default function MapPanel() {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <Marker position={position}>
-        <Popup>You are here</Popup>
+        <Popup>{markerLabel || "You are here"}</Popup>
       </Marker>
     </MapContainer>
   );

@@ -129,6 +129,10 @@ export default function FindDoctorPage() {
   const [zip, setZip] = useState("");
   const [insurance, setInsurance] = useState("");
   const [specialty, setSpecialty] = useState("");
+  const [selectedMapPosition, setSelectedMapPosition] = useState<
+    [number, number] | null
+  >(null);
+  const [mapMarkerLabel, setMapMarkerLabel] = useState("You are here");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(
     BOSTON_DOCTORS[0]?.id || null,
   );
@@ -137,7 +141,30 @@ export default function FindDoctorPage() {
 
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) ?? null;
 
-  const runDoctorSearch = (searchZip: string, searchSpecialty: string) => {
+  const geocodeZipToCoords = async (normalizedZip: string) => {
+    const zipFive = normalizedZip.slice(0, 5);
+    const response = await fetch(`https://api.zippopotam.us/us/${zipFive}`);
+
+    if (!response.ok) {
+      throw new Error("ZIP code not found.");
+    }
+
+    const payload = (await response.json()) as {
+      places?: Array<{ latitude?: string; longitude?: string }>;
+    };
+
+    const place = payload.places?.[0];
+    const latitude = Number(place?.latitude);
+    const longitude = Number(place?.longitude);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      throw new Error("No coordinates found for this ZIP code.");
+    }
+
+    return [latitude, longitude] as [number, number];
+  };
+
+  const runDoctorSearch = async (searchZip: string, searchSpecialty: string) => {
     const normalizedZip = searchZip.trim();
     const isValidZip = /^\d{5}(-\d{4})?$/.test(normalizedZip);
 
@@ -160,6 +187,23 @@ export default function FindDoctorPage() {
     setDoctors(filteredDoctors);
     setSelectedDoctorId(filteredDoctors[0]?.id || null);
 
+    if (normalizedZip) {
+      try {
+        const coords = await geocodeZipToCoords(normalizedZip);
+        setSelectedMapPosition(coords);
+        setMapMarkerLabel(`ZIP ${normalizedZip}`);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Could not locate that ZIP code on the map.";
+        alert(message);
+      }
+    } else {
+      setSelectedMapPosition(null);
+      setMapMarkerLabel("You are here");
+    }
+
     if (filteredDoctors.length === 0) {
       setDoctorError("No doctors found for the current filters.");
     }
@@ -178,7 +222,10 @@ export default function FindDoctorPage() {
             onSpecialtyChange={setSpecialty}
             onSearch={() => runDoctorSearch(zip, specialty)}
           />
-          <MapPanel />
+          <MapPanel
+            targetPosition={selectedMapPosition}
+            markerLabel={mapMarkerLabel}
+          />
         </section>
 
         <aside className="fd-right">
