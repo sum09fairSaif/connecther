@@ -303,11 +303,11 @@ export default function SymptomTracker() {
         }
 
         .sc-container {
-          max-width: 640px;
+          max-width: 720px;
           margin: 0 auto;
-          padding: 40px 20px 100px;
+          padding: 40px 24px 100px;
           animation: scFadeUp 0.4s ease-out;
-          zoom: 1.15;
+          zoom: 1.2;
         }
 
         /* Back link */
@@ -347,8 +347,8 @@ export default function SymptomTracker() {
         .sc-section {
           background: #fff;
           border-radius: 16px;
-          padding: 24px;
-          margin-bottom: 20px;
+          padding: 28px;
+          margin-bottom: 24px;
           border: 1px solid #F0EAE6;
         }
         .sc-section-header {

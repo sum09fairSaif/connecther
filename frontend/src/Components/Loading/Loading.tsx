@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { PiSparkle } from "react-icons/pi";
 import { apiService } from "../../services/api.service";
 import type { CheckInRequest } from "../../types/api";
 import "./Loading.css";
@@ -106,7 +107,9 @@ export default function Loading() {
         <span className="loading-dot" />
         <span className="loading-dot" />
       </div>
-      <h2 className="loading-heading">Creating your tailored picks ✨</h2>
+      <h2 className="loading-heading">
+        Creating your tailored picks <PiSparkle className="loading-heading-icon" size={40} />
+      </h2>
       <p className="loading-text">
         We're building personalized video recommendations just for you based on your symptoms. Almost there!
       </p>

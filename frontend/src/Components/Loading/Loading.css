@@ -51,17 +51,26 @@
 
 .loading-heading {
   margin: 0;
-  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
   font-weight: 600;
   color: #3a2f4a;
   letter-spacing: -0.02em;
 }
 
+.loading-heading-icon {
+  color: #c75b7a;
+  flex-shrink: 0;
+}
+
 .loading-text {
   margin: 0;
-  max-width: 320px;
-  font-size: 0.95rem;
+  max-width: 400px;
+  font-size: 1.25rem;
   color: #6a6680;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.5;
 }
