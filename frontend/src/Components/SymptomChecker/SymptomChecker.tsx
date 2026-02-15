@@ -307,6 +307,7 @@ export default function SymptomTracker() {
           margin: 0 auto;
           padding: 40px 20px 100px;
           animation: scFadeUp 0.4s ease-out;
+          zoom: 1.15;
         }
 
         /* Back link */
@@ -325,6 +326,7 @@ export default function SymptomTracker() {
         /* Header */
         .sc-header {
           margin-bottom: 40px;
+          text-align: center;
         }
         .sc-title {
           font-family: 'Poppins', sans-serif;
