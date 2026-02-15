@@ -1,4 +1,5 @@
 // backend/src/routes/checkIn.ts - WITH GEMINI API
+import { createHash } from 'crypto';
 import { Router } from 'express';
 import { supabase } from '../config/supabase';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -8,10 +9,21 @@ const router = Router();
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Convert email or other string to a valid UUID for DB storage. */
+function toStoredUserId(id: string): string {
+  if (UUID_REGEX.test(id)) return id;
+  const hash = createHash('sha256').update(id).digest('hex');
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${hash.slice(12, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`;
+}
+
 // POST /api/check-in - Submit daily check-in and get Gemini recommendations
 router.post('/', async (req, res) => {
   try {
     const { user_id, energy_level, symptoms, moods, preferred_workout_type } = req.body;
+    // CRITICAL: Always convert to stored format - never pass raw email to DB (UUID columns reject it)
+    const storedUserId = toStoredUserId(String(user_id || 'guest'));
 
     // Validate required fields
     if (!user_id || !energy_level || !symptoms || !moods) {
@@ -103,33 +115,45 @@ Respond in this EXACT JSON format (no markdown, just valid JSON):
       throw new Error('Invalid response from AI');
     }
 
-    // Extract workout IDs
-    const recommendedWorkoutIds = geminiResponse.recommendations.map((r: any) => r.workout_id);
+    // Extract workout IDs - validate they are real UUIDs (Gemini can hallucinate wrong values)
+    const validWorkoutIds = new Set((allWorkouts || []).map((w: any) => String(w.id)));
+    const recommendedWorkoutIds = geminiResponse.recommendations
+      .map((r: any) => r.workout_id)
+      .filter((id: unknown) => typeof id === 'string' && UUID_REGEX.test(id) && validWorkoutIds.has(id));
+
+    // Fallback: if Gemini returned invalid IDs, pick first 3 workouts
+    const idsToUse =
+      recommendedWorkoutIds.length >= 3
+        ? recommendedWorkoutIds.slice(0, 3)
+        : (allWorkouts || []).slice(0, 3).map((w: any) => w.id);
 
     // Get full workout details
     const { data: recommendedWorkouts, error: fetchError } = await supabase
       .from('workouts')
       .select('*')
-      .in('id', recommendedWorkoutIds);
+      .in('id', idsToUse);
 
     if (fetchError) throw fetchError;
 
-    // Save check-in to database with Gemini's reasoning
+    // Save check-in to database with Gemini's reasoning (use storedUserId, never raw email)
     const { data: checkIn, error: checkInError } = await supabase
       .from('user_check_ins')
       .insert({
-        user_id,
+        user_id: storedUserId,
         energy_level,
         symptoms,
         moods,
         preferred_workout_type: preferred_workout_type || null,
-        recommended_workout_ids: recommendedWorkoutIds,
+        recommended_workout_ids: idsToUse,
         gemini_reasoning: JSON.stringify(geminiResponse)
       })
       .select()
       .single();
 
-    if (checkInError) throw checkInError;
+    if (checkInError) {
+      console.error('Check-in insert failed. storedUserId:', storedUserId, 'raw user_id:', user_id);
+      throw checkInError;
+    }
 
     // Combine Gemini reasoning with workout details
     const workoutsWithReasoning = recommendedWorkouts.map((workout: any) => {
@@ -140,18 +164,19 @@ Respond in this EXACT JSON format (no markdown, just valid JSON):
       };
     });
 
-    res.json({
+    return res.json({
       success: true,
       checkIn,
+      check_in_id: checkIn?.id ?? '',
       recommendations: workoutsWithReasoning,
       message: geminiResponse.overall_message,
+      ai_message: geminiResponse.overall_message,
       gemini_insights: geminiResponse
     });
-
   } catch (error: any) {
     console.error('Error processing check-in:', error);
-    res.status(500).json({ 
-      success: false, 
+    return res.status(500).json({
+      success: false,
       error: error.message || 'Failed to process check-in'
     });
   }
@@ -162,11 +187,12 @@ router.get('/history/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const { limit = 30 } = req.query;
+    const storedUserId = toStoredUserId(String(userId || 'guest'));
 
     const { data, error } = await supabase
       .from('user_check_ins')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', storedUserId)
       .order('created_at', { ascending: false })
       .limit(Number(limit));
 

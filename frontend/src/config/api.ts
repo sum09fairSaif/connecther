@@ -1,5 +1,7 @@
-// API Configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// API Configuration - In dev, use /api so Vite proxy forwards to backend (avoids CORS)
+export const API_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3000/api');
 
 // API Endpoints
 export const API_ENDPOINTS = {

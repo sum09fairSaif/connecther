@@ -12,6 +12,7 @@ import Dashboard from "./Components/Dashboard/Dashboard";
 import NameSetup from "./Components/NameSetup/NameSetup";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
 import Loading from "./Components/Loading/Loading";
+import WorkoutRecommendations from "./Components/WorkoutRecommendations/WorkoutRecommendations";
 import { AuthProvider } from "./context/AuthContext";
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
           <Route path="/symptom-checker" element={<SymptomChecker />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/loading" element={<Loading />} />
+          <Route path="/workout-recommendations" element={<WorkoutRecommendations />} />
           <Route path="/find-a-provider" element={<FindDoctorPage />} />
 
           <Route

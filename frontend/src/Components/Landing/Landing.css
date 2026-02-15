@@ -17,7 +17,6 @@
   --radius-lg: 18px;
   --radius-md: 14px;
 
-  --parallax-y: 0px;
 }
 
 .landing-root {
@@ -71,7 +70,7 @@
       transparent 60%
     );
 
-  transform: translateY(calc(var(--parallax-y) * -1));
+  transform: none;
   filter: blur(8px);
   opacity: 0.9;
 }
@@ -180,6 +179,158 @@ header .container {
   box-shadow: var(--shadow);
   border-radius: var(--radius-xl);
   padding: 44px 44px;
+  opacity: 1;
+  will-change: transform;
+}
+
+.about-section {
+  position: relative;
+  z-index: 1;
+  padding: 54px 0 26px;
+  background: transparent;
+}
+
+.about-shell {
+  position: relative;
+  padding: 0;
+  will-change: transform, opacity;
+}
+
+.about-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  min-height: clamp(280px, 34vw, 400px);
+  border-radius: 34px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(
+    130deg,
+    rgba(255, 255, 255, 0.74) 0%,
+    rgba(243, 233, 252, 0.55) 48%,
+    rgba(236, 226, 248, 0.45) 100%
+  );
+  box-shadow: 0 20px 45px rgba(70, 49, 111, 0.13);
+}
+
+.about-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      820px 260px at 30% 18%,
+      rgba(255, 255, 255, 0.5),
+      transparent 72%
+    ),
+    radial-gradient(
+      640px 260px at 60% 88%,
+      rgba(219, 197, 248, 0.3),
+      transparent 76%
+    );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.about-content,
+.about-media {
+  position: relative;
+  z-index: 2;
+}
+
+.about-content {
+  padding: clamp(18px, 2vw, 30px);
+  align-self: center;
+}
+
+.about-title {
+  margin: 0 0 14px;
+  font-size: clamp(24px, 2.9vw, 46px);
+  line-height: 1.06;
+  font-weight: 700;
+  color: #5e3f89;
+}
+
+.about-eyebrow {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #513a74;
+}
+
+.about-shell h2 {
+  margin: 0 0 16px;
+  font-size: clamp(28px, 3.2vw, 50px);
+  line-height: 1.14;
+  letter-spacing: -0.02em;
+  color: #281a3f;
+}
+
+.about-body {
+  margin: 0;
+  max-width: 58ch;
+  font-size: clamp(17px, 1.35vw, 23px);
+  line-height: 1.52;
+  font-weight: 500;
+  color: #4b3d67;
+}
+
+.about-media {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  padding: 22px 0 12px;
+}
+
+.about-media-image {
+  display: block;
+  width: min(560px, 112%);
+  height: auto;
+  opacity: 0.88;
+  transform: none;
+}
+
+.parallax-transition {
+  position: relative;
+  height: clamp(120px, 22vh, 220px);
+  margin: 6px 0 14px;
+  overflow: hidden;
+  z-index: 1;
+  transform: translateY(0);
+  opacity: 1;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.transition-shape {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(2px);
+}
+
+.transition-shape-a {
+  inset: 18% 8% auto 12%;
+  height: 74%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(139, 124, 246, 0.2),
+    rgba(139, 124, 246, 0.05) 68%,
+    transparent 80%
+  );
+}
+
+.transition-shape-b {
+  inset: auto 18% 8% 18%;
+  height: 62%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(246, 184, 216, 0.2),
+    rgba(246, 184, 216, 0.05) 70%,
+    transparent 84%
+  );
 }
 
 .hero-content {
@@ -209,6 +360,7 @@ header .container {
   width: min(420px, 100%);
   height: auto;
   margin: 0;
+  will-change: transform;
 }
 
 .hero-content h2 {
@@ -269,12 +421,12 @@ header .container {
 }
 
 .spacer {
-  height: 26px;
+  height: 0;
 }
 
 .footer-container {
   width: min(1100px, 92vw);
-  margin: 22px auto 34px;
+  margin: 12px auto 34px;
   position: relative;
   z-index: 1;
 
@@ -305,6 +457,38 @@ header .container {
 }
 
 @media (max-width: 900px) {
+  .about-section {
+    padding: 26px 0 12px;
+  }
+
+  .about-shell {
+    padding: 0;
+  }
+
+  .about-card {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    border-radius: 24px;
+  }
+
+  .about-content {
+    padding: 16px 18px 18px;
+  }
+
+  .about-media {
+    min-height: 220px;
+    padding: 20px 0 0;
+  }
+
+  .about-media-image {
+    width: min(420px, 108%);
+  }
+
+  .parallax-transition {
+    height: 110px;
+    margin: 0 0 8px;
+  }
+
   #hero .container {
     padding: 26px 18px;
   }

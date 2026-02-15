@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import type { SymptomType, MoodType } from "../../types/enums";
 
 interface SymptomMoodItem {
   label: string;
@@ -14,6 +15,22 @@ interface ChipButtonProps {
   onClick: () => void;
   disabled: boolean;
 }
+
+/** Maps UI labels to database enum values (symptom_type) */
+const LABEL_TO_SYMPTOM: Record<string, SymptomType> = {
+  "Back Pain": "back_pain",
+  "Weak Arms": "weak_arm",
+  "Weak Legs": "weak_legs",
+  "Sciatica Pain": "sciatica_pain",
+  "Nausea": "nausea",
+  "Morning Sickness": "morning_sickness",
+  "Fatigue": "fatigue",
+  "Headaches": "headaches",
+  "Bloating": "bloating",
+  "Weakness": "weakness",
+  "Stomach Pain": "stomach_pain",
+  "Weak in General": "weak_in_general",
+};
 
 const symptoms = [
   { label: "Back Pain", icon: "🦴" },
@@ -109,10 +126,12 @@ function ChipButton({ item, selected, onClick, disabled }: ChipButtonProps) {
 
 export default function SymptomTracker() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
   const [selectedMoods, setSelectedMoods] = useState<string[]>([]);
   const [energyLevel, setEnergyLevel] = useState<number>(3);
+  const error = (location.state as { error?: string } | null)?.error ?? "";
 
   const toggleSymptom = (label: string) => {
     setSelectedSymptoms((prev) =>
@@ -138,19 +157,19 @@ export default function SymptomTracker() {
     if (selectedSymptoms.length === 0 && selectedMoods.length === 0) return;
 
     const userId = user?.email || "guest";
+    const checkInData = {
+      user_id: userId,
+      energy_level: energyLevel,
+      symptoms: selectedSymptoms
+        .map((s) => LABEL_TO_SYMPTOM[s])
+        .filter((s): s is SymptomType => s != null),
+      moods: selectedMoods.map((m) => m.toLowerCase() as MoodType),
+    };
 
-    // Navigate to loading page with check-in data
-    sessionStorage.setItem("connecther-report-submitted", "true");
+    // Navigate immediately to loading page; it will make the API call and then go to recommendations
     navigate("/loading", {
       replace: true,
-      state: {
-        checkInData: {
-          user_id: userId,
-          energy_level: energyLevel,
-          symptoms: selectedSymptoms.map(s => s.toLowerCase().replace(/\s+/g, '_')),
-          moods: selectedMoods.map(m => m.toLowerCase()),
-        }
-      }
+      state: { checkInData },
     });
   };
 
@@ -447,6 +466,21 @@ export default function SymptomTracker() {
 
         {/* Submit */}
         <div style={{ textAlign: "center" }}>
+          {error && (
+            <div
+              style={{
+                marginBottom: "16px",
+                padding: "12px 20px",
+                borderRadius: "12px",
+                background: "#FFF0F0",
+                color: "#D4666B",
+                fontSize: "14px",
+                fontWeight: 500,
+              }}
+            >
+              {error}
+            </div>
+          )}
           <button
             onClick={handleSubmit}
             disabled={selectedSymptoms.length === 0 && selectedMoods.length === 0}

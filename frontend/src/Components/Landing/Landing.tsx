@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import mainLogo from "../Assets/connecther-logo.png";
 import textLogo from "../Assets/text-logo.png";
 import heroImage from "../Assets/doctor-consultation.png";
+import womanYoga from "../Assets/woman-yoga.png";
 
 function Landing() {
   const { user, isAuthenticated } = useAuth();
@@ -12,22 +13,9 @@ function Landing() {
   const location = useLocation();
   const navWrapRef = useRef<HTMLDivElement | null>(null);
 
-
   useEffect(() => {
     const displayName = user?.name || "Guest";
     document.title = `ConnectHER - Welcome, ${displayName}`;
-
-    const onScroll = () => {
-      const y = window.scrollY;
-      document.documentElement.style.setProperty(
-        "--parallax-y",
-        `${y * 0.35}px`,
-      );
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, [user?.name]);
 
   useEffect(() => {
@@ -94,7 +82,7 @@ function Landing() {
               </li>
               <li>
                 <Link
-                  to={isAuthenticated ? "/your-profile" : "/login"}
+                  to="/your-profile"
                   onClick={() => setMenuOpen(false)}
                 >
                   Your Profile
@@ -150,6 +138,36 @@ function Landing() {
           </li>
         </ul>
       </div>
+
+      <section id="about" className="about-section">
+        <div className="container about-shell">
+          <article className="about-card">
+            <div className="about-media" aria-hidden="true">
+              <img src={womanYoga} alt="" className="about-media-image" />
+            </div>
+            <div className="about-content">
+              <p className="about-eyebrow">Our Mission</p>
+              <h3>
+                ConnectHer empowers women with accessible healthcare guidance,
+                trusted resources, and faster paths to care.
+              </h3>
+              <p className="about-body">
+                We built this platform to reduce uncertainty, improve health
+                literacy, and help every user move from symptoms to informed
+                care decisions with confidence.
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section
+        className="parallax-transition"
+        aria-hidden="true"
+      >
+        <div className="transition-shape transition-shape-a" />
+        <div className="transition-shape transition-shape-b" />
+      </section>
     </div>
   );
 }
