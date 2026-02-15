@@ -17,11 +17,6 @@
   --radius-lg: 18px;
   --radius-md: 14px;
 
-  --parallax-y: 0px;
-  --parallax-progress: 0;
-  --mission-shift: 0px;
-  --mission-pointer-x: 0px;
-  --mission-pointer-y: 0px;
 }
 
 .landing-root {
@@ -75,7 +70,7 @@
       transparent 60%
     );
 
-  transform: translateY(calc(var(--parallax-y) * -1));
+  transform: none;
   filter: blur(8px);
   opacity: 0.9;
 }
@@ -295,13 +290,7 @@ header .container {
   width: min(560px, 112%);
   height: auto;
   opacity: 0.88;
-  transform: translate3d(
-    calc(var(--mission-pointer-x) * 0.45),
-    calc((var(--mission-shift) * -0.5) + (var(--mission-pointer-y) * 0.45)),
-    0
-  );
-  transition: transform 120ms linear;
-  will-change: transform;
+  transform: none;
 }
 
 .parallax-transition {
@@ -432,12 +421,12 @@ header .container {
 }
 
 .spacer {
-  height: 26px;
+  height: 0;
 }
 
 .footer-container {
   width: min(1100px, 92vw);
-  margin: 22px auto 34px;
+  margin: 12px auto 34px;
   position: relative;
   z-index: 1;
 

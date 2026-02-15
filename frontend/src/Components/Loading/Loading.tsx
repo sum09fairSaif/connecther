@@ -12,6 +12,10 @@ function normalizeSymptoms(symptoms: string[]): string[] {
   return symptoms.map((s) => (s === "weak_arms" ? "weak_arm" : s));
 }
 
+interface LocationState {
+  checkInData: CheckInRequest;
+}
+
 export default function Loading() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,7 +44,7 @@ export default function Loading() {
       aiMessage?: string;
       checkInId?: string;
     }) => {
-      navigate("/workout-recommendations", {
+      navigate("/recommendations", {
         state: {
           recommendations: result.recommendations,
           aiMessage: result.aiMessage,
@@ -104,7 +108,7 @@ export default function Loading() {
       </div>
       <h2 className="loading-heading">Creating your tailored picks ✨</h2>
       <p className="loading-text">
-        We’re building personalized video recommendations just for you based on your symptoms. Almost there!
+        We're building personalized video recommendations just for you based on your symptoms. Almost there!
       </p>
     </div>
   );
