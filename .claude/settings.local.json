@@ -6,7 +6,8 @@
       "Bash(git pull:*)",
       "Bash(git push:*)",
       "Bash(/c/Users/scarl/Downloads/connecther/frontend/.env.example:*)",
-      "Bash(/c/Users/scarl/Downloads/connecther/frontend/.env:*)"
+      "Bash(/c/Users/scarl/Downloads/connecther/frontend/.env:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
