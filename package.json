@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "dev": "npm run --prefix frontend dev",
+    "build": "npm run --prefix frontend build",
+    "preview": "npm run --prefix frontend preview"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
     "@types/leaflet": "^1.9.21",
